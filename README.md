@@ -1,18 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌐 AU Connect
+
+> **AU Connect** is an exclusive social networking platform for **Assumption University** — connecting **students, professors, and alumni** in one professional community, allowing users to create professional profiles, share updates, and stay connected with the AU family.
+
+> This is the admin managment system for AU Connect. The purpose is to manage users, user posts or contents and to post announcments, events or
+
+---
+
+### 👤 Members
+
+- Thant Zin Min
+- Min Thant
+- Si Thu Naung
+
+---
 
 ## Getting Started
 
-First, run the development server:
+- run `pnpm install` after cloning the project there will be a few warnings but you can ignore them
+- run `pnpm prisma generate` before running the prjoect localy
+- then you can run the project with `pnpm dev` or `pnpm run dev`
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ✨ Features
+
+`to be added`
+
+---
+
+## 🧠 Tech Stack
+
+| Layer                | Technology                                                                                                       |
+| :------------------- | :--------------------------------------------------------------------------------------------------------------- |
+| **Frontend**         | [Next.js 14+](https://nextjs.org/), [React 18+](https://react.dev/), [Tailwind CSS 3+](https://tailwindcss.com/) |
+| **Backend**          | Next.js API Routes, [Prisma ORM](https://www.prisma.io/)                                                         |
+| **Database**         | [MongoDB Atlas](https://www.mongodb.com/atlas/database)                                                          |
+| **Authentication**   | [NextAuth.js + Google OAuth 2.0](https://next-auth.js.org/providers/google)                                      |
+| **Version Control**  | Git + GitHub                                                                                                     |
+| **Deployment (TBD)** | -                                                                                                                |
+| **Design**           | Figma (UI / UX Prototype)                                                                                        |
+
+---
+
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 

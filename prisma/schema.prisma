@@ -1,0 +1,381 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  username String
+  email    String @unique
+
+  googleId    String?
+  linkedinId  String?
+  microsoftId String?
+
+  profilePic         String?
+  profilePicOriginal String?
+  profilePicCrop     Json?
+
+  coverPhoto         String?
+  coverPhotoOriginal String?
+  coverPhotoCrop     Json?
+
+  title    String?
+  location String?
+  about    String?
+
+  jobApplications JobApplication[]
+
+  connections Int @default(0)
+
+  experience Experience[]
+  education  Education[]
+  posts      Post[]
+
+  // For Connection
+  sentConnectionRequests     ConnectionRequest[] @relation("SentConnectionRequests")
+  receivedConnectionRequests ConnectionRequest[] @relation("ReceivedConnectionRequests")
+
+  phoneNo     String?
+  phonePublic Boolean @default(false)
+  emailPublic Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  notificationsReceived Notification[] @relation("NotificationUser")
+  notificationsSent     Notification[] @relation("NotificationFromUser")
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  FREELANCE
+  INTERNSHIP
+}
+
+model Experience {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  title          String
+  employmentType EmploymentType
+  company        String
+
+  startMonth Int
+  startYear  Int
+
+  endMonth Int?
+  endYear  Int?
+
+  isCurrent Boolean @default(false)
+
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model Education {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  school       String
+  degree       String
+  fieldOfStudy String
+
+  startMonth Int
+  startYear  Int
+
+  endMonth Int
+  endYear  Int
+
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model Post {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  user       User    @relation(fields: [userId], references: [id])
+  userId     String  @db.ObjectId
+  username   String
+  profilePic String?
+
+  postType   String
+  visibility String?
+
+  title      String?
+  content    String
+  media      Json? // [{ url, type, name, mimetype, size }]
+  mediaTypes String[] @default([])
+  hasLinks   Boolean  @default(false)
+  links      Json?
+
+  commentsDisabled Boolean @default(false)
+  commentCount     Int     @default(0)
+  likeCount        Int     @default(0)
+  shareCount       Int     @default(0)
+  savedCount       Int     @default(0)
+
+  // Poll fields (only when postType === "poll")
+  pollOptions String[] // ["Option 1", "Option 2", "Option 3"]
+  pollEndsAt  DateTime? // When poll closes
+  pollVotes   Json? // { "0": ["userId1"], "1": ["userId2", "userId3"] }
+  // pollSettings   Json?     // { multipleChoice: false } - template for future features
+
+  jobPost JobPost?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  comments     Comment[]
+  interactions PostInteraction[]
+}
+
+model Comment {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // user info (denormalized)
+  userId     String @db.ObjectId
+  username   String
+  profilePic String
+
+  // comment fields
+  content String
+  media   Json?
+
+  likeCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relation to post
+  postId String @db.ObjectId
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // replies (self-relation)
+  parentId String? @db.ObjectId
+
+  depth   Int       @default(0)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies Comment[] @relation("CommentReplies")
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELED
+}
+
+model ConnectionRequest {
+  id         String        @id @default(auto()) @map("_id") @db.ObjectId
+  fromUserId String        @db.ObjectId
+  toUserId   String        @db.ObjectId
+  status     RequestStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relations to your existing User model
+  fromUser User @relation("SentConnectionRequests", fields: [fromUserId], references: [id])
+  toUser   User @relation("ReceivedConnectionRequests", fields: [toUserId], references: [id])
+
+  @@index([fromUserId, toUserId])
+  @@index([toUserId, status])
+  @@index([fromUserId, status])
+}
+
+model Connection {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // store the pair in a consistent order so (A,B) == (B,A)
+  userAId String @db.ObjectId
+  userBId String @db.ObjectId
+
+  createdAt DateTime @default(now())
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
+}
+
+model PostInteraction {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  postId String @db.ObjectId
+
+  type      PostInteractionType
+  createdAt DateTime            @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId, type])
+  @@index([postId, type])
+}
+
+enum PostInteractionType {
+  LIKE
+  SHARE
+  SAVED
+}
+
+enum NotificationType {
+  CONNECTION_REQUEST
+  CONNECTION_ACCEPTED
+  POST_LIKED
+  POST_COMMENTED
+  COMMENT_REPLIED
+  POST_SHARED
+  POST_VOTED
+  JOB_APPLICATION
+}
+
+model Notification {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String @db.ObjectId
+  fromUserId String @db.ObjectId
+
+  type     NotificationType
+  entityId String?
+  isRead   Boolean          @default(false)
+
+  createdAt DateTime @default(now())
+
+  user     User @relation("NotificationUser", fields: [userId], references: [id])
+  fromUser User @relation("NotificationFromUser", fields: [fromUserId], references: [id])
+}
+
+model Conversation {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userAId String @db.ObjectId
+  userBId String @db.ObjectId
+
+  lastMessageAt       DateTime?
+  lastMessageText     String?
+  lastMessageSenderId String?   @db.ObjectId
+
+  userALastReadAt DateTime?
+  userBLastReadAt DateTime?
+
+  userAUnreadCount Int @default(0)
+  userBUnreadCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages Message[]
+
+  @@unique([userAId, userBId])
+  @@index([userAId, lastMessageAt])
+  @@index([userBId, lastMessageAt])
+}
+
+model Message {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  conversationId String       @db.ObjectId
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+
+  senderId   String @db.ObjectId
+  receiverId String @db.ObjectId
+
+  text  String?
+  media Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@index([receiverId, createdAt])
+}
+
+enum JobStatus {
+  OPEN
+  CLOSED
+  FILLED
+}
+
+enum JobLocationType {
+  ONSITE
+  REMOTE
+  HYBRID
+}
+
+model JobPost {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // 1–1 relation with Post
+  postId String @unique @db.ObjectId
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // core job info
+  jobTitle     String
+  companyName  String?
+  location     String?
+  locationType JobLocationType?
+
+  jobDetails      String?
+  jobRequirements String[]
+
+  employmentType EmploymentType
+
+  positionsAvailable Int @default(1) // 
+  positionsFilled    Int @default(0)
+
+  // compensation
+  salaryMin      Int?
+  salaryMax      Int?
+  salaryCurrency String?
+
+  // logistics
+  deadline DateTime?
+  status   JobStatus @default(OPEN)
+
+  // application handling
+  applyUrl           String? // if external
+  allowExternalApply Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applications JobApplication[]
+}
+
+enum ApplicationStatus {
+  APPLIED
+  SHORTLISTED
+  REJECTED
+}
+
+model JobApplication {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  jobPostId String  @db.ObjectId
+  jobPost   JobPost @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+
+  applicantId String @db.ObjectId
+  applicant   User   @relation(fields: [applicantId], references: [id])
+
+  resumeLetter   String?
+  expectedSalary Int?
+  availability   String?
+  resumeBlobName String
+
+  status ApplicationStatus @default(APPLIED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([jobPostId, applicantId])
+  @@index([jobPostId])
+  @@index([applicantId])
+}
