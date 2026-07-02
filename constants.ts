@@ -6,9 +6,15 @@
 export const BASE_API_PATH = "/api/connect-admin/v1";
 
 // page routes
-export const MAIN_PAGE_PATH = "/"
-export const ANNOUNCEMENTS_PAGE_PATH = "/announcements"
-export const COMMUNITY_PAGE_PATH = "/community"
-export const USER_MANAGEMENT_PAGE_PATH = "/user-management"
-export const USER_VERIFICATION_PAGE_PATH = "/user-verification"
-export const REPORTS_PAGE_PATH = "/reports"
+export const MAIN_PAGE_PATH = "/";
+export const ANNOUNCEMENTS_PAGE_PATH = "/announcements";
+export const COMMUNITY_PAGE_PATH = "/community";
+export const USER_MANAGEMENT_PAGE_PATH = "/user-management";
+export const USER_VERIFICATION_PAGE_PATH = "/user-verification";
+export const REPORTS_PAGE_PATH = "/reports";
+
+// api routes
+export const VERIFICATIONS_API_PATH = BASE_API_PATH + "/verifications";
+export const VERIFICATION_API_PATH = (id: string) => BASE_API_PATH + `/verifications/${id}`;
+export const VERIFICATION_DOCUMENT_API_PATH = (id: string) =>
+  BASE_API_PATH + `/verifications/${id}/document`;
