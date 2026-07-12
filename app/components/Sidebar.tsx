@@ -17,7 +17,7 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   return (
-    <aside className="flex h-screen w-80 flex-col bg-white border-r border-gray-100">
+    <aside className="flex h-screen w-80 shrink-0 flex-col bg-white border-r border-gray-100">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100">
       <Image
@@ -26,6 +26,7 @@ export default function Sidebar() {
         width={36}
         height={36}
         className="rounded-full object-cover"
+        style={{ width: 36, height: 36 }}
       />
 
         <span className="text-lg font-semibold text-gray-900 tracking-tight">AU Connect</span>

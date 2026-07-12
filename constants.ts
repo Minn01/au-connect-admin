@@ -4,6 +4,7 @@
  */
 
 export const BASE_API_PATH = "/api/connect-admin/v1";
+export const ANNOUNCEMENTS_API_PATH = `${BASE_API_PATH}/announcements`;
 
 // page routes
 export const MAIN_PAGE_PATH = "/"
