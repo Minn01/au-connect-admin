@@ -10,6 +10,7 @@ import {
   EllipsisVertical,
   FileText,
   Flag,
+  RefreshCw,
   Search,
   Users,
 } from "lucide-react";
@@ -17,6 +18,10 @@ import {
 import DetailPanel from "./components/DetailPanel";
 import { Report } from "@/types/Report";
 import { useReportsQuery } from "./utils/reportsFetchFunction";
+import {
+  ReportStats,
+  useReportStatsQuery,
+} from "./utils/reportStatsFetchFunction";
 
 // Mock report records used to populate the moderation table and detail panel.
 // const reports: Report[] = [
@@ -100,40 +105,49 @@ import { useReportsQuery } from "./utils/reportsFetchFunction";
 //   },
 // ];
 
-// Summary cards displayed across the top of the page.
-const metrics = [
+const numberFormatter = new Intl.NumberFormat("en-US");
+
+const metricDefinitions: Array<{
+  label: string;
+  value: keyof ReportStats;
+  note: (stats: ReportStats) => string;
+  icon: typeof Clock3;
+  tone: string;
+}> = [
   {
     label: "Pending Review",
-    value: 36,
-    note: "Needs your action",
+    value: "pendingReview",
+    note: () => "Needs your action",
     icon: Clock3,
     tone: "orange",
   },
   {
     label: "Reported Posts",
-    value: 48,
-    note: "+5 from yesterday",
+    value: "reportedPosts",
+    note: ({ postsYesterday }) =>
+      `${numberFormatter.format(postsYesterday)} ${postsYesterday === 1 ? "report" : "reports"} yesterday`,
     icon: FileText,
     tone: "red",
   },
   {
     label: "Reported Users",
-    value: 28,
-    note: "+3 from yesterday",
+    value: "reportedUsers",
+    note: ({ usersYesterday }) =>
+      `${numberFormatter.format(usersYesterday)} ${usersYesterday === 1 ? "report" : "reports"} yesterday`,
     icon: Users,
     tone: "purple",
   },
   {
     label: "Resolved",
-    value: 89,
-    note: "Total resolved",
+    value: "resolved",
+    note: () => "Final decisions made",
     icon: CheckCircle2,
     tone: "green",
   },
   {
     label: "All Reports",
-    value: 165,
-    note: "Total reports",
+    value: "allReports",
+    note: () => "All submissions",
     icon: Flag,
     tone: "blue",
   },
@@ -186,8 +200,10 @@ export default function ReportsPage() {
   const {
     data: reportsData,
     isLoading,
+    isFetching,
     isError,
     error,
+    refetch: refetchReports,
   } = useReportsQuery({
     page,
     limit,
@@ -200,6 +216,14 @@ export default function ReportsPage() {
   });
   const reports = reportsData?.data ?? [];
   const pagination = reportsData?.pagination;
+  const {
+    data: statsResponse,
+    isLoading: statsLoading,
+    isFetching: statsFetching,
+    isError: statsError,
+    refetch: refetchStats,
+  } = useReportStatsQuery();
+  const stats = statsResponse?.data;
 
   // Page-level UI state for tabs, searching, row details, and bulk selection.
   const [selected, setSelected] = useState<Report | null>(null);
@@ -225,6 +249,12 @@ export default function ReportsPage() {
   const handleQueryChange = (newQuery: string) => {
     setQuery(newQuery);
     startNewFilter();
+  };
+
+  const isRefreshing = isFetching || statsFetching;
+
+  const handleRefresh = async () => {
+    await Promise.all([refetchReports(), refetchStats()]);
   };
 
   const totalPages = pagination?.totalPages ?? 0;
@@ -282,7 +312,7 @@ export default function ReportsPage() {
 
         {/* Moderation summary metrics */}
         <section className="mt-7 grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-5">
-          {metrics.map(({ label, value, note, icon: Icon, tone }) => (
+          {metricDefinitions.map(({ label, value, note, icon: Icon, tone }) => (
             <article
               key={label}
               className="flex min-h-24 items-center gap-3 rounded-md border border-slate-200 bg-white p-3 shadow-[0_2px_10px_rgba(15,23,42,.025)]"
@@ -316,32 +346,64 @@ export default function ReportsPage() {
                 <p className="text-[11px] font-semibold text-slate-700">
                   {label}
                 </p>
-                <p className="mt-1 textxl font-bold">{value}</p>
-                <p className="mt-1 text-[10px] text-slate-500">{note}</p>
+                <p className="mt-1 text-xl font-bold" aria-busy={statsLoading}>
+                  {statsLoading
+                    ? "—"
+                    : stats
+                      ? numberFormatter.format(stats[value])
+                      : "Unavailable"}
+                </p>
+                <p
+                  className={`mt-1 text-[10px] ${statsError ? "text-red-600" : "text-slate-500"}`}
+                >
+                  {statsError
+                    ? "Could not load statistics"
+                    : stats
+                      ? note(stats)
+                      : "Loading statistics..."}
+                </p>
               </div>
             </article>
           ))}
         </section>
 
         {/* Report type tabs */}
-        <div className="mt-6 flex gap-2 border-b border-slate-200 pb-2">
-          {[
-            { label: "All Reports", value: "", count: 165 },
-            { label: "Posts", value: "POST", count: 102 },
-            { label: "Users", value: "USER", count: 63 },
-          ].map((tab) => (
-            <button
-              key={tab.label}
-              onClick={() => handleTypeChange(tab.value)}
-              className={`rounded-md px-4 py-2 text-xs font-semibold ${
-                type === tab.value
-                  ? "border border-blue-600 bg-blue-50 text-blue-600"
-                  : "bg-slate-100 text-slate-700"
-              }`}
-            >
-              {tab.label} ({tab.count})
-            </button>
-          ))}
+        <div className="mt-6 flex items-center justify-between gap-3 border-b border-slate-200 pb-2">
+          <div className="flex min-w-0 gap-2 overflow-x-auto">
+            {[
+              { label: "All Reports", value: "", count: stats?.allReports },
+              { label: "Posts", value: "POST", count: stats?.reportedPosts },
+              { label: "Users", value: "USER", count: stats?.reportedUsers },
+            ].map((tab) => (
+              <button
+                key={tab.label}
+                onClick={() => handleTypeChange(tab.value)}
+                className={`shrink-0 rounded-md px-4 py-2 text-xs font-semibold ${
+                  type === tab.value
+                    ? "border border-blue-600 bg-blue-50 text-blue-600"
+                    : "bg-slate-100 text-slate-700"
+                }`}
+              >
+                {tab.label} ({tab.count === undefined
+                  ? "—"
+                  : numberFormatter.format(tab.count)})
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex h-9 shrink-0 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            aria-label="Refresh reports and statistics"
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+            <span className="hidden sm:inline">
+              {isRefreshing ? "Refreshing..." : "Refresh"}
+            </span>
+          </button>
         </div>
 
         {/* Search and filter toolbar */}
