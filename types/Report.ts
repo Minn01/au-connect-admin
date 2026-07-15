@@ -43,3 +43,77 @@ export type ReportsQueryParams = {
   reporter?: string;
   sort: string;
 };
+
+export type ReportSubmission = {
+  id: string;
+  reason: string;
+  description: string | null;
+  status: "PENDING" | "REVIEWED" | "DISMISSED" | "ACTION_TAKEN";
+  createdAt: string;
+  updatedAt: string;
+  reporter: {
+    id: string;
+    username: string;
+    profilePic: string | null;
+  };
+};
+
+export type ModerationActivity = {
+  id: string;
+  action: ReportAdminAction;
+  note: string | null;
+  durationDays: number | null;
+  createdAt: string;
+};
+
+export type ReportCase = {
+  id: string;
+  targetId: string;
+  targetType: "POST" | "USER";
+  title: string;
+  reportedUsername: string | null;
+  reportedProfilePic: string | null;
+  reportedContent: string | null;
+  reportedMedia: unknown;
+  reportedLinks: unknown;
+  reportCount: number;
+  uniqueReporterCount: number;
+  reasons: string[];
+  statuses: string[];
+  latestStatus: ReportSubmission["status"];
+  firstReportedAt: string;
+  latestReportedAt: string;
+  moderationActions: ModerationActivity[];
+  submissions: ReportSubmission[];
+};
+
+export type ReportCaseResponse = {
+  data: ReportCase;
+};
+
+export type ReportAdminAction =
+  | "MARK_UNDER_REVIEW"
+  | "REOPEN_CASE"
+  | "DISMISS_REPORTS"
+  | "KEEP_POST"
+  | "WARN_USER"
+  | "SUSPEND_USER"
+  | "BAN_USER"
+  | "REMOVE_POST"
+  | "REMOVE_POST_WARN_AUTHOR";
+
+export type ReportActionRequest = {
+  action: ReportAdminAction;
+  note?: string;
+  durationDays?: number;
+};
+
+export type ReportActionResponse = {
+  data: {
+    action: ReportAdminAction;
+    reportStatus: ReportSubmission["status"];
+    updatedReportCount: number;
+    createdAt: string;
+  };
+  message: string;
+};

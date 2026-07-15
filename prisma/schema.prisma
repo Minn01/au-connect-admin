@@ -58,6 +58,16 @@ model User {
   notificationsSent     Notification[] @relation("NotificationFromUser")
 
   reportsMade Report[] @relation("ReportsMade")
+
+  accountStatus  UserAccountStatus @default(ACTIVE)
+  suspendedUntil DateTime?
+  warningCount   Int               @default(0)
+}
+
+enum UserAccountStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
 }
 
 enum EmploymentType {
@@ -140,6 +150,14 @@ model Post {
 
   comments     Comment[]
   interactions PostInteraction[]
+
+  moderationStatus PostModerationStatus @default(VISIBLE)
+  removedAt         DateTime?
+}
+
+enum PostModerationStatus {
+  VISIBLE
+  REMOVED
 }
 
 model Comment {
@@ -455,4 +473,31 @@ enum ReportStatus {
   REVIEWED
   DISMISSED
   ACTION_TAKEN
+}
+
+model ModerationAction {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  targetType ReportTargetType
+  targetId   String           @db.ObjectId
+  action     AdminActionType
+  note       String?
+
+  durationDays Int?
+  createdAt    DateTime @default(now())
+
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+enum AdminActionType {
+  MARK_UNDER_REVIEW
+  REOPEN_CASE
+  DISMISS_REPORTS
+  KEEP_POST
+  WARN_USER
+  SUSPEND_USER
+  BAN_USER
+  REMOVE_POST
+  REMOVE_POST_WARN_AUTHOR
 }
