@@ -13,3 +13,13 @@ export const COMMUNITY_PAGE_PATH = "/community"
 export const USER_MANAGEMENT_PAGE_PATH = "/user-management"
 export const USER_VERIFICATION_PAGE_PATH = "/user-verification"
 export const REPORTS_PAGE_PATH = "/reports"
+
+
+// API routes
+export const REPORTS_API_PATH = BASE_API_PATH + "/reports";
+export const REPORTS_STAT_API_PATH = BASE_API_PATH + "/reports/stats"
+export const SINGLE_REPORT_API_PATH = (reportId: string) => `${BASE_API_PATH}/reports/${reportId}`;
+
+// constant variables
+export const DEFAULT_PAGE_SIZE = 10;
+export const MAX_PAGE_SIZE = 100;
