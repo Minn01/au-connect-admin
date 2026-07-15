@@ -19,6 +19,8 @@ export const REPORTS_PAGE_PATH = "/reports"
 export const REPORTS_API_PATH = BASE_API_PATH + "/reports";
 export const REPORTS_STAT_API_PATH = BASE_API_PATH + "/reports/stats"
 export const SINGLE_REPORT_API_PATH = (reportId: string) => `${BASE_API_PATH}/reports/${reportId}`;
+export const REPORT_ACTION_API_PATH = (reportTargetId: string) =>
+  `${BASE_API_PATH}/reports/${reportTargetId}/actions`;
 
 // constant variables
 export const DEFAULT_PAGE_SIZE = 10;

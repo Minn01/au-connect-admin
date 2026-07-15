@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   CheckCircle2,
   ChevronLeft,
@@ -8,11 +9,15 @@ import {
   CircleUserRound,
   Clock3,
   EllipsisVertical,
+  ExternalLink,
+  FileSearch,
   FileText,
   Flag,
+  ScanSearch,
   RefreshCw,
   Search,
   Users,
+  XCircle,
 } from "lucide-react";
 
 import DetailPanel from "./components/DetailPanel";
@@ -583,14 +588,55 @@ export default function ReportsPage() {
                     <td className="whitespace-nowrap px-2 py-3 text-slate-600">
                       {new Date(report.latestReportedAt).toLocaleString()}
                     </td>
-                    <td className="px-3 py-3 text-center">
-                      <button
-                        title="Report actions"
-                        onClick={(event) => event.stopPropagation()}
-                        className="rounded p-1 hover:bg-slate-100"
-                      >
-                        <EllipsisVertical className="h-4 w-4" />
-                      </button>
+                    <td
+                      className="px-3 py-3 text-center"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <details className="group relative inline-block text-left">
+                        <summary
+                          title="Report actions"
+                          aria-label={`Actions for ${report.title}`}
+                          className="grid h-8 w-8 cursor-pointer list-none place-items-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 [&::-webkit-details-marker]:hidden"
+                        >
+                          <EllipsisVertical className="h-4 w-4" />
+                        </summary>
+
+                        <div className="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-lg border border-slate-200 bg-white p-1.5 text-left shadow-lg shadow-slate-950/10">
+                          <button
+                            type="button"
+                            className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-950"
+                          >
+                            <ExternalLink className="h-4 w-4 text-slate-500" />
+                            View {report.targetType === "USER" ? "Profile" : "Original Post"}
+                          </button>
+                          <Link
+                            href={`/reports/${report.targetId}`}
+                            className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-950"
+                          >
+                            <FileSearch className="h-4 w-4 text-slate-500" />
+                            Review Full Case
+                          </Link>
+
+                          <div className="my-1.5 border-t border-slate-100" />
+
+                          {report.latestStatus === "PENDING" && (
+                            <button
+                              type="button"
+                              className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-950"
+                            >
+                              <ScanSearch className="h-4 w-4 text-blue-600" />
+                              Mark Under Review
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[11px] font-medium text-red-600 transition-colors hover:bg-red-50"
+                          >
+                            <XCircle className="h-4 w-4" />
+                            Dismiss All Reports
+                          </button>
+                        </div>
+                      </details>
                     </td>
                   </tr>
                 ))}
