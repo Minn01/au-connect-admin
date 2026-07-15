@@ -25,3 +25,9 @@ export const REPORT_ACTION_API_PATH = (reportTargetId: string) =>
 // constant variables
 export const DEFAULT_PAGE_SIZE = 10;
 export const MAX_PAGE_SIZE = 100;
+
+// api routes
+export const VERIFICATIONS_API_PATH = BASE_API_PATH + "/verifications";
+export const VERIFICATION_API_PATH = (id: string) => BASE_API_PATH + `/verifications/${id}`;
+export const VERIFICATION_DOCUMENT_API_PATH = (id: string) =>
+  BASE_API_PATH + `/verifications/${id}/document`;

@@ -1,4 +1,4 @@
-function requiredEnv(name: string) {
+function requiredEnv(name: string): string {
   const value = process.env[name];
 
   if (!value) {

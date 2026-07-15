@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       '@azure/storage-blob':
-        specifier: ^12.29.1
+        specifier: ^12.33.0
         version: 12.33.0
       '@prisma/client':
         specifier: 6.19.0
@@ -29,6 +29,9 @@ importers:
       react-dom:
         specifier: 19.2.4
         version: 19.2.4(react@19.2.4)
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4
@@ -1279,6 +1282,7 @@ packages:
 
   fast-xml-builder@1.2.1:
     resolution: {integrity: sha512-tPb5TTWfgfVx5BNSi2xV0eLr89POeXXn0dXIsCJ9m1narrWxeIyx6je9d7Rce/3NyXLbvuQmLkxq+RuxMWejvw==}
+
 
   fast-xml-parser@5.9.3:
     resolution: {integrity: sha512-brCNCeScma/kqa54J4PIDriSSSLssRkuYaUCpvHJulGc3HGI/xxKUCTDcYkAdqJsyb//ydpbxecjC3hB9+tb/g==}
@@ -3613,6 +3617,7 @@ snapshots:
 
   fast-levenshtein@2.0.6: {}
 
+
   fast-xml-builder@1.2.1:
     dependencies:
       path-expression-matcher: 1.6.1
@@ -3622,6 +3627,7 @@ snapshots:
     dependencies:
       '@nodable/entities': 2.2.0
       fast-xml-builder: 1.2.1
+
       is-unsafe: 1.0.1
       path-expression-matcher: 1.6.1
       strnum: 2.4.1
