@@ -43,9 +43,11 @@ model User {
   accountVerificationRole   AccountVerificationRole?
   verificationRequests      AccountVerificationRequest[]
 
-  experience Experience[]
-  education  Education[]
-  posts      Post[]
+  experience           Experience[]
+  education            Education[]
+  posts                Post[]
+  communityManagements CommunityManager[]
+  communityFollows     CommunityFollow[]
 
   // For Connection
   sentConnectionRequests     ConnectionRequest[] @relation("SentConnectionRequests")
@@ -136,6 +138,75 @@ enum EmploymentType {
   INTERNSHIP
 }
 
+enum ActorType {
+  USER
+  COMMUNITY
+}
+
+enum CommunityStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+model Community {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  name String
+  slug String @unique
+
+  about    String?
+  location String?
+
+  profilePic         String?
+  profilePicOriginal String?
+  profilePicCrop     Json?
+
+  coverPhoto         String?
+  coverPhotoOriginal String?
+  coverPhotoCrop     Json?
+
+  status CommunityStatus @default(ACTIVE)
+
+  createdByAdminId String? @db.ObjectId
+
+  managers  CommunityManager[]
+  followers CommunityFollow[]
+  posts     Post[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CommunityManager {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  communityId String    @db.ObjectId
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([communityId, userId])
+  @@index([userId])
+}
+
+model CommunityFollow {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  communityId String    @db.ObjectId
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([communityId, userId])
+  @@index([userId])
+}
+
 model Experience {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
@@ -179,6 +250,11 @@ model Post {
   userId     String  @db.ObjectId
   username   String
   profilePic String?
+
+  actorType ActorType @default(USER)
+
+  communityId String?    @db.ObjectId
+  community   Community? @relation(fields: [communityId], references: [id], onDelete: SetNull)
 
   postType   String
   visibility String?
@@ -597,15 +673,15 @@ enum AdminActionType {
 model Admin {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  email       String @unique
-  microsoftId String? @unique
+  email       String      @unique
+  microsoftId String?     @unique
   name        String?
   role        AdminRole
   status      AdminStatus @default(PENDING)
 
   invitedById String? @db.ObjectId
-  invitedBy   Admin?   @relation("AdminInvitations", fields: [invitedById], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  invitations Admin[]  @relation("AdminInvitations")
+  invitedBy   Admin?  @relation("AdminInvitations", fields: [invitedById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  invitations Admin[] @relation("AdminInvitations")
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
