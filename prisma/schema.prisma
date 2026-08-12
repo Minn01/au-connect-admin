@@ -39,7 +39,7 @@ model User {
 
   connections Int @default(0)
 
-  accountVerificationStatus AccountVerificationStatus @default(UNSUBMITTED)
+  accountVerificationStatus AccountVerificationStatus    @default(UNSUBMITTED)
   accountVerificationRole   AccountVerificationRole?
   verificationRequests      AccountVerificationRequest[]
 
@@ -61,7 +61,8 @@ model User {
   notificationsReceived Notification[] @relation("NotificationUser")
   notificationsSent     Notification[] @relation("NotificationFromUser")
 
-  reportsMade Report[] @relation("ReportsMade")
+  reportsMade       Report[]           @relation("ReportsMade")
+  moderationNotices ModerationNotice[]
 
   accountStatus  UserAccountStatus @default(ACTIVE)
   suspendedUntil DateTime?
@@ -206,11 +207,12 @@ model Post {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  comments     Comment[]
-  interactions PostInteraction[]
+  comments          Comment[]
+  interactions      PostInteraction[]
+  moderationNotices ModerationNotice[]
 
   moderationStatus PostModerationStatus @default(VISIBLE)
-  removedAt         DateTime?
+  removedAt        DateTime?
 }
 
 enum PostModerationStatus {
@@ -590,4 +592,56 @@ enum AdminActionType {
   BAN_USER
   REMOVE_POST
   REMOVE_POST_WARN_AUTHOR
+}
+
+model Admin {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  email       String @unique
+  microsoftId String? @unique
+  name        String?
+  role        AdminRole
+  status      AdminStatus @default(PENDING)
+
+  invitedById String? @db.ObjectId
+  invitedBy   Admin?   @relation("AdminInvitations", fields: [invitedById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  invitations Admin[]  @relation("AdminInvitations")
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  activatedAt DateTime?
+  lastLoginAt DateTime?
+
+  @@index([status])
+  @@index([role, status])
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  MODERATOR
+}
+
+enum AdminStatus {
+  PENDING
+  ACTIVE
+  DISABLED
+}
+
+model ModerationNotice {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  recipientId String @db.ObjectId
+  recipient   User   @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  action AdminActionType
+  reason String?
+
+  targetPostId String? @db.ObjectId
+  targetPost   Post?   @relation(fields: [targetPostId], references: [id], onDelete: SetNull)
+
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([recipientId, isRead, createdAt])
 }

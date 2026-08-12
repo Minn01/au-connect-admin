@@ -28,7 +28,8 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const admin = getOptionalAdminContext(req);
+    // getOptionalAdminContext calls getCurrentAdmin
+    const admin = await getOptionalAdminContext(req);
     const body = await req.json();
 
     const title = typeof body?.title === "string" ? body.title.trim() : "";

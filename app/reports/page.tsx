@@ -27,6 +27,8 @@ import {
   ReportStats,
   useReportStatsQuery,
 } from "./utils/reportStatsFetchFunction";
+import { MAIN_APP_PATH } from "@/constants";
+import handleViewOriginalPost from "@/lib/handleViewOriginallPost";
 
 // Mock report records used to populate the moderation table and detail panel.
 // const reports: Report[] = [
@@ -183,9 +185,7 @@ export function Thumb({
 
   return (
     <div
-      className={`${common} grid place-items-center ${
-        "bg-linear-to-br from-sky-100 to-rose-100"
-      } text-slate-700`}
+      className={`${common} grid place-items-center ${"bg-linear-to-br from-sky-100 to-rose-100"} text-slate-700`}
     >
       <CircleUserRound className={large ? "h-12 w-12" : "h-9 w-9"} />
     </div>
@@ -389,9 +389,11 @@ export default function ReportsPage() {
                     : "bg-slate-100 text-slate-700"
                 }`}
               >
-                {tab.label} ({tab.count === undefined
+                {tab.label} (
+                {tab.count === undefined
                   ? "—"
-                  : numberFormatter.format(tab.count)})
+                  : numberFormatter.format(tab.count)}
+                )
               </button>
             ))}
           </div>
@@ -493,7 +495,9 @@ export default function ReportsPage() {
                     <input
                       type="checkbox"
                       aria-label="Select all"
-                      checked={reports.length > 0 && checked.length === reports.length}
+                      checked={
+                        reports.length > 0 && checked.length === reports.length
+                      }
                       onChange={(event) =>
                         setChecked(
                           event.target.checked
@@ -573,7 +577,9 @@ export default function ReportsPage() {
                         ))}
                       </div>
                     </td>
-                    <td className="px-2 py-3 text-center">{report.reportCount}</td>
+                    <td className="px-2 py-3 text-center">
+                      {report.reportCount}
+                    </td>
                     <td className="px-2 py-3">
                       <span
                         className={`rounded px-2.5 py-1 text-[9px] font-medium ${
@@ -603,11 +609,21 @@ export default function ReportsPage() {
 
                         <div className="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-lg border border-slate-200 bg-white p-1.5 text-left shadow-lg shadow-slate-950/10">
                           <button
+                            onClick={() =>
+                              handleViewOriginalPost(
+                                report.targetType,
+                                report.targetId,
+                                report.reportedUsername || "",
+                              )
+                            }
                             type="button"
                             className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-950"
                           >
                             <ExternalLink className="h-4 w-4 text-slate-500" />
-                            View {report.targetType === "USER" ? "Profile" : "Original Post"}
+                            View{" "}
+                            {report.targetType === "USER"
+                              ? "Profile"
+                              : "Original Post"}
                           </button>
                           <Link
                             href={`/reports/${report.targetId}`}
@@ -650,7 +666,9 @@ export default function ReportsPage() {
           )}
           {isError && (
             <div className="grid h-32 place-items-center text-sm text-red-600">
-              {error instanceof Error ? error.message : "Unable to load reports."}
+              {error instanceof Error
+                ? error.message
+                : "Unable to load reports."}
             </div>
           )}
           {!isLoading && !isError && reports.length === 0 && (
@@ -665,7 +683,9 @@ export default function ReportsPage() {
           <div />
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+              onClick={() =>
+                setPage((currentPage) => Math.max(1, currentPage - 1))
+              }
               disabled={!pagination?.hasPreviousPage}
               className="grid h-9 w-9 place-items-center rounded border border-slate-200 bg-white disabled:cursor-not-allowed disabled:opacity-40"
             >

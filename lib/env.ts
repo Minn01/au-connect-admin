@@ -18,3 +18,12 @@ export const AZURE_STORAGE_CONTAINER_NAME = requiredEnv(
 export const AZURE_STORAGE_CONNECTION_STRING = requiredEnv(
   "AZURE_STORAGE_CONNECTION_STRING"
 );
+
+export function getMicrosoftAdminEnv() {
+  return {
+    clientId: requiredEnv("MICROSOFT_CLIENT_ID"),
+    clientSecret: requiredEnv("MICROSOFT_CLIENT_SECRET"),
+    tenantId: requiredEnv("MICROSOFT_TENANT_ID"),
+    sessionSecret: requiredEnv("JWT_SECRET"),
+  };
+}

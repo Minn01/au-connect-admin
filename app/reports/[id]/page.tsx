@@ -24,6 +24,7 @@ import { REPORTS_PAGE_PATH } from "@/constants";
 import { ReportAdminAction, ReportSubmission } from "@/types/Report";
 import { useReportActionMutation } from "../utils/reportActionFetchFunction";
 import { useReportCaseQuery } from "../utils/reportCaseFetchFunction";
+import handleViewOriginalPost from "@/lib/handleViewOriginallPost";
 
 const formatDate = (value: string) => new Date(value).toLocaleString();
 const formatLabel = (value: string) => value.replaceAll("_", " ");
@@ -227,6 +228,7 @@ export default function ReportCasePage() {
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             </button>
             <button
+            onClick={() => console.log("clicked button")}
               type="button"
               className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50"
             >
@@ -347,7 +349,11 @@ export default function ReportCasePage() {
                 </div>
               </div>
               {reportCase.reportedContent && <p className="mt-4 line-clamp-6 whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600">{reportCase.reportedContent}</p>}
-              <button type="button" className="mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50"><ExternalLink className="h-4 w-4" /> View original</button>
+              <button 
+              onClick={() => handleViewOriginalPost(reportCase.targetType, reportCase.targetId, reportCase.reportedUsername || "")}
+              type="button" className="mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                <ExternalLink className="h-4 w-4" /> View original post
+              </button>
             </section>
 
             <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/2">

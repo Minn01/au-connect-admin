@@ -102,6 +102,9 @@ export async function PATCH(
       AdminActionType.BAN_USER,
     ];
     const changesUser = userTargetActions.includes(action);
+    let warningRecipientId: string | undefined;
+    let warningPostId: string | undefined;
+    let postAuthorId: string | undefined;
 
     if (report.targetType === ReportTargetType.USER && changesUser) {
       const user = await prisma.user.findUnique({
@@ -117,32 +120,7 @@ export async function PATCH(
       }
 
       if (action === AdminActionType.WARN_USER) {
-        await prisma.user.update({
-          where: { id },
-          data: { warningCount: { increment: 1 } },
-        });
-      }
-
-      if (action === AdminActionType.SUSPEND_USER) {
-        const suspendedUntil = new Date();
-        suspendedUntil.setDate(suspendedUntil.getDate() + body.durationDays!);
-        await prisma.user.update({
-          where: { id },
-          data: {
-            accountStatus: UserAccountStatus.SUSPENDED,
-            suspendedUntil,
-          },
-        });
-      }
-
-      if (action === AdminActionType.BAN_USER) {
-        await prisma.user.update({
-          where: { id },
-          data: {
-            accountStatus: UserAccountStatus.BANNED,
-            suspendedUntil: null,
-          },
-        });
+        warningRecipientId = user.id;
       }
     }
 
@@ -166,36 +144,10 @@ export async function PATCH(
         );
       }
 
-      if (
-        action === AdminActionType.KEEP_POST
-      ) {
-        await prisma.post.update({
-          where: { id },
-          data: {
-            moderationStatus: PostModerationStatus.VISIBLE,
-            removedAt: null,
-          },
-        });
-      }
-
-      if (
-        action === AdminActionType.REMOVE_POST ||
-        action === AdminActionType.REMOVE_POST_WARN_AUTHOR
-      ) {
-        await prisma.post.update({
-          where: { id },
-          data: {
-            moderationStatus: PostModerationStatus.REMOVED,
-            removedAt: new Date(),
-          },
-        });
-      }
-
+      postAuthorId = post.userId;
       if (action === AdminActionType.REMOVE_POST_WARN_AUTHOR) {
-        await prisma.user.update({
-          where: { id: post.userId },
-          data: { warningCount: { increment: 1 } },
-        });
+        warningRecipientId = post.userId;
+        warningPostId = post.id;
       }
     }
 
@@ -208,24 +160,103 @@ export async function PATCH(
           ? ReportStatus.DISMISSED
           : ReportStatus.ACTION_TAKEN;
 
-    const [updatedReports, moderationAction] = await Promise.all([
-      prisma.report.updateMany({
-        where: { targetId: id },
-        data: { status: reportStatus },
-      }),
-      prisma.moderationAction.create({
-        data: {
-          targetType: report.targetType,
-          targetId: id,
-          action,
-          note,
-          durationDays:
-            action === AdminActionType.SUSPEND_USER
-              ? body.durationDays
-              : undefined,
-        },
-      }),
-    ]);
+    const { updatedReports, moderationAction } = await prisma.$transaction(
+      async (tx) => {
+        if (report.targetType === ReportTargetType.USER && changesUser) {
+          if (action === AdminActionType.WARN_USER) {
+            await tx.user.update({
+              where: { id },
+              data: { warningCount: { increment: 1 } },
+            });
+          }
+
+          if (action === AdminActionType.SUSPEND_USER) {
+            const suspendedUntil = new Date();
+            suspendedUntil.setDate(suspendedUntil.getDate() + body.durationDays!);
+            await tx.user.update({
+              where: { id },
+              data: {
+                accountStatus: UserAccountStatus.SUSPENDED,
+                suspendedUntil,
+              },
+            });
+          }
+
+          if (action === AdminActionType.BAN_USER) {
+            await tx.user.update({
+              where: { id },
+              data: {
+                accountStatus: UserAccountStatus.BANNED,
+                suspendedUntil: null,
+              },
+            });
+          }
+        }
+
+        if (report.targetType === ReportTargetType.POST && changesPost) {
+          if (action === AdminActionType.KEEP_POST) {
+            await tx.post.update({
+              where: { id },
+              data: {
+                moderationStatus: PostModerationStatus.VISIBLE,
+                removedAt: null,
+              },
+            });
+          }
+
+          if (
+            action === AdminActionType.REMOVE_POST ||
+            action === AdminActionType.REMOVE_POST_WARN_AUTHOR
+          ) {
+            await tx.post.update({
+              where: { id },
+              data: {
+                moderationStatus: PostModerationStatus.REMOVED,
+                removedAt: new Date(),
+              },
+            });
+          }
+
+          if (action === AdminActionType.REMOVE_POST_WARN_AUTHOR) {
+            await tx.user.update({
+              where: { id: postAuthorId! },
+              data: { warningCount: { increment: 1 } },
+            });
+          }
+        }
+
+        if (warningRecipientId) {
+          await tx.moderationNotice.create({
+            data: {
+              recipientId: warningRecipientId,
+              action,
+              reason: note,
+              targetPostId: warningPostId,
+              isRead: false,
+            },
+          });
+        }
+
+        const updatedReports = await tx.report.updateMany({
+          where: { targetId: id },
+          data: { status: reportStatus },
+        });
+        const moderationAction = await tx.moderationAction.create({
+          data: {
+            targetType: report.targetType,
+            targetId: id,
+            action,
+            note,
+            durationDays:
+              action === AdminActionType.SUSPEND_USER
+                ? body.durationDays
+                : undefined,
+          },
+        });
+
+        return { updatedReports, moderationAction };
+      },
+    );
 
     return NextResponse.json({
       data: {
