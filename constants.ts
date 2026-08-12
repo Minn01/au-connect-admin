@@ -23,6 +23,9 @@ export const SINGLE_REPORT_API_PATH = (reportId: string) => `${BASE_API_PATH}/re
 export const REPORT_ACTION_API_PATH = (reportTargetId: string) =>
   `${BASE_API_PATH}/reports/${reportTargetId}/actions`;
 export const ANNOUNCEMENTS_API_PATH = `${BASE_API_PATH}/announcements`;
+export const COMMUNITIES_API_PATH = `${BASE_API_PATH}/communities`;
+export const COMMUNITY_API_PATH = (id: string) => `${COMMUNITIES_API_PATH}/${id}`;
+export const USERS_API_PATH = `${BASE_API_PATH}/users`;
 export const VERIFICATIONS_API_PATH = BASE_API_PATH + "/verifications";
 export const VERIFICATION_API_PATH = (id: string) => BASE_API_PATH + `/verifications/${id}`;
 export const VERIFICATION_DOCUMENT_API_PATH = (id: string) =>
