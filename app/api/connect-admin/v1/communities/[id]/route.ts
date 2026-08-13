@@ -148,7 +148,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const existing = await prisma.community.findUnique({
       where: { id },
-      select: { id: true, name: true },
+      select: { id: true, name: true, slug: true, about: true, location: true },
     });
 
     if (!existing) {
@@ -160,15 +160,21 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const body = await req.json();
     const name =
-      typeof body?.name === "string" && body.name.trim()
+      body?.name !== undefined &&
+      typeof body.name === "string" &&
+      body.name.trim()
         ? body.name.trim()
         : existing.name;
     const requestedSlug =
       typeof body?.slug === "string" && body.slug.trim()
         ? body.slug.trim()
         : null;
-    const about = normalizeOptionalText(body?.about);
-    const location = normalizeOptionalText(body?.location);
+    const about =
+      body?.about !== undefined ? normalizeOptionalText(body.about) : existing.about;
+    const location =
+      body?.location !== undefined
+        ? normalizeOptionalText(body.location)
+        : existing.location;
     const status = body?.status;
     const managerIds = normalizeManagerIds(body?.managerIds);
 
@@ -192,7 +198,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       }
     }
 
-    const slug = await resolveSlug(id, name, requestedSlug);
+    const slug =
+      body?.slug !== undefined || body?.name !== undefined
+        ? await resolveSlug(id, name, requestedSlug)
+        : existing.slug;
 
     await prisma.$transaction(async (tx) => {
       await tx.community.update({

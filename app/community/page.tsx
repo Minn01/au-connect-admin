@@ -364,14 +364,7 @@ export default function CommunityPage() {
       const res = await fetch(COMMUNITY_API_PATH(community.id), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: community.name,
-          slug: community.slug,
-          about: community.about,
-          location: community.location,
-          status,
-          managerIds: community.managers.map((manager) => manager.user.id),
-        }),
+        body: JSON.stringify({ status }),
       });
       const json = (await res.json()) as CommunityResponse;
 
