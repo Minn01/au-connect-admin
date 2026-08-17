@@ -617,7 +617,7 @@ export default function ReportsPage() {
                               )
                             }
                             type="button"
-                            className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-950"
+                            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-950"
                           >
                             <ExternalLink className="h-4 w-4 text-slate-500" />
                             View{" "}
@@ -638,7 +638,7 @@ export default function ReportsPage() {
                           {report.latestStatus === "PENDING" && (
                             <button
                               type="button"
-                              className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-950"
+                              className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-950"
                             >
                               <ScanSearch className="h-4 w-4 text-blue-600" />
                               Mark Under Review
@@ -646,7 +646,7 @@ export default function ReportsPage() {
                           )}
                           <button
                             type="button"
-                            className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[11px] font-medium text-red-600 transition-colors hover:bg-red-50"
+                            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[11px] font-medium text-red-600 transition-colors hover:bg-red-50"
                           >
                             <XCircle className="h-4 w-4" />
                             Dismiss All Reports

@@ -127,7 +127,7 @@ export default function DetailPanel({
             <button
               onClick={() => handleViewOriginalPost(report.targetType, report.targetId, report.reportedUsername || "")}
               type="button"
-              className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
             >
               <ExternalLink className="h-4 w-4" />
               View{" "}
@@ -142,7 +142,7 @@ export default function DetailPanel({
             </Link>
             <button
               type="button"
-              className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-red-200 bg-white px-3 text-xs font-semibold text-red-600 transition-colors hover:border-red-300 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-md border border-red-200 bg-white px-3 text-xs font-semibold text-red-600 transition-colors hover:border-red-300 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
             >
               <XCircle className="h-4 w-4" />
               Dismiss All Reports
