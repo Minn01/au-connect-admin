@@ -111,7 +111,9 @@ function DetailDrawer({
   const [detail, setDetail] = useState<DetailItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [reviewNote, setReviewNote] = useState("");
-  const [submitting, setSubmitting] = useState<"APPROVED" | "REJECTED" | null>(null);
+  const [submitting, setSubmitting] = useState<
+    "APPROVED" | "REJECTED" | "UNAPPROVE" | null
+  >(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -122,7 +124,9 @@ function DetailDrawer({
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleReview = async (action: "APPROVED" | "REJECTED") => {
+  const handleReview = async (
+    action: "APPROVED" | "REJECTED" | "UNAPPROVE",
+  ) => {
     setSubmitting(action);
     setError("");
     try {
@@ -258,6 +262,34 @@ function DetailDrawer({
                     {submitting === "REJECTED" ? "Rejecting…" : "Reject"}
                   </button>
                 </div>
+              </section>
+            )}
+
+            {/* Reverse decision — only for APPROVED */}
+            {detail.status === "APPROVED" && (
+              <section className="border-b border-gray-100 px-6 py-5">
+                <h3 className="mb-1 text-sm font-semibold text-gray-700">
+                  Reverse verification
+                </h3>
+                <p className="mb-3 text-xs text-gray-500">
+                  Unapproving revokes this user&apos;s verified status and sends
+                  the request back to the pending queue for re-review.
+                </p>
+                <textarea
+                  value={reviewNote}
+                  onChange={(e) => setReviewNote(e.target.value)}
+                  rows={3}
+                  placeholder="Optional reason for reversing (recorded in history)"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-amber-400"
+                />
+                {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+                <button
+                  disabled={!!submitting}
+                  onClick={() => handleReview("UNAPPROVE")}
+                  className="mt-3 w-full rounded-lg border border-amber-500 bg-amber-50 py-2.5 text-sm font-semibold text-amber-700 hover:bg-amber-100 disabled:opacity-50"
+                >
+                  {submitting === "UNAPPROVE" ? "Unapproving…" : "Unapprove"}
+                </button>
               </section>
             )}
 
