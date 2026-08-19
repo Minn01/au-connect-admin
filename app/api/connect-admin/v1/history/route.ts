@@ -55,6 +55,13 @@ export async function GET(request: NextRequest) {
     const sourceLimit = page * limit;
     const include = (candidate: HistoryType) => !type || type === candidate;
 
+    // check for recent activity is about 7 days
+    const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysFromNow = new Date(now);
+    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
     const [
       moderationActions,
       verificationHistory,
@@ -64,10 +71,14 @@ export async function GET(request: NextRequest) {
       verificationCount,
       announcementCount,
       communityCount,
-      totalUsers,
-      pendingReports,
+      pendingReportTargets,
       pendingVerifications,
-      restrictedUsers,
+      suspensionsExpiringSoon,
+      announcementsStartingSoon,
+      newUsersThisWeek,
+      moderationActionsThisWeek,
+      verificationsCompletedThisWeek,
+      announcementsPublishedThisWeek,
     ] = await Promise.all([
       include("MODERATION")
         ? prisma.moderationAction.findMany({
@@ -123,15 +134,32 @@ export async function GET(request: NextRequest) {
       include("VERIFICATION") ? prisma.accountVerificationHistory.count() : 0,
       include("ANNOUNCEMENT") ? prisma.announcement.count() : 0,
       include("COMMUNITY") ? prisma.community.count() : 0,
-      prisma.user.count(),
-      prisma.report.count({ where: { status: "PENDING" } }),
+      prisma.report.findMany({
+        where: { status: "PENDING" },
+        select: { targetId: true, targetType: true },
+      }),
       prisma.accountVerificationRequest.count({ where: { status: "PENDING" } }),
       prisma.user.count({
         where: {
-          accountStatus: {
-            in: [UserAccountStatus.SUSPENDED, UserAccountStatus.BANNED],
-          },
+          accountStatus: UserAccountStatus.SUSPENDED,
+          suspendedUntil: { gte: now, lte: sevenDaysFromNow },
         },
+      }),
+      prisma.announcement.count({
+        where: { startDate: { gt: now, lte: sevenDaysFromNow } },
+      }),
+      prisma.user.count({ where: { createdAt: { gte: sevenDaysAgo, lte: now } } }),
+      prisma.moderationAction.count({
+        where: { createdAt: { gte: sevenDaysAgo, lte: now } },
+      }),
+      prisma.accountVerificationHistory.count({
+        where: {
+          action: { in: ["APPROVED", "REJECTED"] },
+          createdAt: { gte: sevenDaysAgo, lte: now },
+        },
+      }),
+      prisma.announcement.count({
+        where: { startDate: { gte: sevenDaysAgo, lte: now } },
       }),
     ]);
 
@@ -255,14 +283,25 @@ export async function GET(request: NextRequest) {
       moderationCount + verificationCount + announcementCount + communityCount;
     const totalPages = Math.ceil(total / limit);
     const start = (page - 1) * limit;
+    const pendingReports = new Set(
+      pendingReportTargets.map(
+        (report) => `${report.targetType}:${report.targetId}`,
+      ),
+    ).size;
 
     return NextResponse.json({
       items: items.slice(start, start + limit),
       summary: {
-        totalUsers,
         pendingReports,
         pendingVerifications,
-        restrictedUsers,
+        suspensionsExpiringSoon,
+        announcementsStartingSoon,
+        thisWeek: {
+          newUsers: newUsersThisWeek,
+          moderationActions: moderationActionsThisWeek,
+          verificationsCompleted: verificationsCompletedThisWeek,
+          announcementsPublished: announcementsPublishedThisWeek,
+        },
       },
       pagination: {
         page,

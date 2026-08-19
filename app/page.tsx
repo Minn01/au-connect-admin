@@ -4,19 +4,24 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   BellRing,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   CircleAlert,
+  Clock3,
   FileCheck2,
   History,
   LoaderCircle,
   Megaphone,
+  Search,
   ShieldAlert,
   Users,
   UsersRound,
 } from "lucide-react";
 
 import {
+  ANNOUNCEMENTS_PAGE_PATH,
+  COMMUNITY_PAGE_PATH,
   REPORTS_PAGE_PATH,
   USER_MANAGEMENT_PAGE_PATH,
   USER_VERIFICATION_PAGE_PATH,
@@ -27,10 +32,16 @@ import { useHistoryQuery } from "./utils/historyFetchFunction";
 const PAGE_SIZE = 12;
 
 const emptySummary: HistoryResponse["summary"] = {
-  totalUsers: 0,
   pendingReports: 0,
   pendingVerifications: 0,
-  restrictedUsers: 0,
+  suspensionsExpiringSoon: 0,
+  announcementsStartingSoon: 0,
+  thisWeek: {
+    newUsers: 0,
+    moderationActions: 0,
+    verificationsCompleted: 0,
+    announcementsPublished: 0,
+  },
 };
 
 const typeDetails: Record<
@@ -93,39 +104,67 @@ export default function Home() {
     ? Math.min(pagination.page * pagination.limit, pagination.total)
     : 0;
 
-  const summaryCards = [
+  const attentionItems = [
     {
-      label: "Total users",
-      value: summary.totalUsers,
-      note: "All AU Connect accounts",
-      href: USER_MANAGEMENT_PAGE_PATH,
-      icon: Users,
-      tone: "bg-blue-50 text-blue-600",
-    },
-    {
-      label: "Pending reports",
+      label: "reports waiting for review",
       value: summary.pendingReports,
-      note: "Waiting for review",
       href: REPORTS_PAGE_PATH,
       icon: CircleAlert,
-      tone: "bg-red-50 text-red-600",
+      tone: "bg-red-50 text-red-600 border-red-100",
     },
     {
-      label: "Pending verification",
+      label: "verification requests pending",
       value: summary.pendingVerifications,
-      note: "Requests requiring action",
       href: USER_VERIFICATION_PAGE_PATH,
       icon: FileCheck2,
-      tone: "bg-amber-50 text-amber-600",
+      tone: "bg-amber-50 text-amber-700 border-amber-100",
     },
     {
-      label: "Restricted users",
-      value: summary.restrictedUsers,
-      note: "Suspended or banned",
+      label: "suspensions expiring within 7 days",
+      value: summary.suspensionsExpiringSoon,
       href: USER_MANAGEMENT_PAGE_PATH,
-      icon: ShieldAlert,
-      tone: "bg-violet-50 text-violet-600",
+      icon: Clock3,
+      tone: "bg-violet-50 text-violet-700 border-violet-100",
     },
+    {
+      label: "announcements starting within 7 days",
+      value: summary.announcementsStartingSoon,
+      href: ANNOUNCEMENTS_PAGE_PATH,
+      icon: Megaphone,
+      tone: "bg-blue-50 text-blue-700 border-blue-100",
+    },
+  ];
+  const actionableItems = attentionItems.filter((item) => item.value > 0);
+
+  const weekMetrics = [
+    { label: "New users", value: summary.thisWeek.newUsers, icon: Users },
+    {
+      label: "Moderation actions",
+      value: summary.thisWeek.moderationActions,
+      icon: ShieldAlert,
+    },
+    {
+      label: "Verifications completed",
+      value: summary.thisWeek.verificationsCompleted,
+      icon: FileCheck2,
+    },
+    {
+      label: "Announcements published",
+      value: summary.thisWeek.announcementsPublished,
+      icon: Megaphone,
+    },
+  ];
+
+  const quickActions = [
+    { label: "Find a user", href: USER_MANAGEMENT_PAGE_PATH, icon: Search },
+    { label: "Review reports", href: REPORTS_PAGE_PATH, icon: CircleAlert },
+    {
+      label: "Review verification",
+      href: USER_VERIFICATION_PAGE_PATH,
+      icon: FileCheck2,
+    },
+    { label: "Create announcement", href: ANNOUNCEMENTS_PAGE_PATH, icon: Megaphone },
+    { label: "Manage communities", href: COMMUNITY_PAGE_PATH, icon: UsersRound },
   ];
 
   return (
@@ -138,31 +177,111 @@ export default function Home() {
           </p>
         </header>
 
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {summaryCards.map((card) => {
-            const Icon = card.icon;
+        <section className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.7fr)]">
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-slate-100">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-semibold text-slate-900">Needs attention</h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  Items that may require an administrator today.
+                </p>
+              </div>
+              <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+                {loading ? "—" : actionableItems.length}
+              </span>
+            </div>
 
-            return (
-              <Link
-                key={card.label}
-                href={card.href}
-                className="group rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-slate-100 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-medium text-slate-500">{card.label}</p>
-                    <p className="mt-1 text-2xl font-semibold text-slate-950">
-                      {loading ? "—" : card.value.toLocaleString()}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-400">{card.note}</p>
-                  </div>
-                  <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${card.tone}`}>
-                    <Icon className="h-5 w-5" />
-                  </div>
+            {loading ? (
+              <div className="mt-5 grid h-28 place-items-center text-xs text-slate-500">
+                <LoaderCircle className="h-5 w-5 animate-spin" />
+              </div>
+            ) : actionableItems.length === 0 ? (
+              <div className="mt-5 flex min-h-28 items-center gap-4 rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-4">
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white text-emerald-600 shadow-sm">
+                  <CheckCircle2 className="h-6 w-6" />
                 </div>
-              </Link>
-            );
-          })}
+                <div>
+                  <p className="text-sm font-semibold text-emerald-900">
+                    You&apos;re all caught up
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-emerald-700">
+                    There are no pending reviews or upcoming items requiring attention.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {actionableItems.map((item) => {
+                  const Icon = item.icon;
+
+                  return (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      className={`flex items-center gap-3 rounded-lg border p-3.5 transition hover:-translate-y-0.5 hover:shadow-sm ${item.tone}`}
+                    >
+                      <Icon className="h-5 w-5 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-lg font-semibold leading-none">{item.value}</p>
+                        <p className="mt-1.5 text-xs font-medium leading-4">{item.label}</p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-slate-100">
+            <h2 className="font-semibold text-slate-900">Quick actions</h2>
+            <p className="mt-1 text-xs text-slate-500">Jump into common admin tasks.</p>
+            <div className="mt-4 grid gap-2">
+              {quickActions.map((action) => {
+                const Icon = action.icon;
+
+                return (
+                  <Link
+                    key={action.label}
+                    href={action.href}
+                    className="flex min-h-10 items-center gap-3 rounded-lg bg-slate-100 px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:bg-red-50 hover:text-red-700"
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    {action.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm shadow-slate-100">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+            <div className="shrink-0 lg:w-44">
+              <h2 className="font-semibold text-slate-900">This week</h2>
+              <p className="mt-1 text-xs text-slate-500">Activity from the last 7 days.</p>
+            </div>
+            <div className="grid flex-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {weekMetrics.map((metric) => {
+                const Icon = metric.icon;
+
+                return (
+                  <div key={metric.label} className="flex items-center gap-3 rounded-lg bg-slate-50 px-4 py-3">
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white text-slate-500 shadow-sm">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold leading-none text-slate-900">
+                        {loading ? "—" : metric.value.toLocaleString()}
+                      </p>
+                      <p className="mt-1.5 text-[11px] font-medium text-slate-500">
+                        {metric.label}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </section>
 
         <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm shadow-slate-100">

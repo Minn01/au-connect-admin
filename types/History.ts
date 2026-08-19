@@ -22,10 +22,16 @@ export type HistoryItem = {
 export type HistoryResponse = {
   items: HistoryItem[];
   summary: {
-    totalUsers: number;
     pendingReports: number;
     pendingVerifications: number;
-    restrictedUsers: number;
+    suspensionsExpiringSoon: number;
+    announcementsStartingSoon: number;
+    thisWeek: {
+      newUsers: number;
+      moderationActions: number;
+      verificationsCompleted: number;
+      announcementsPublished: number;
+    };
   };
   pagination: {
     page: number;
