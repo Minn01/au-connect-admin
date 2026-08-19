@@ -34,6 +34,7 @@ type ActionBody = {
   durationDays?: number;
 };
 
+// dedicated endpoint for moderation action for user management
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
