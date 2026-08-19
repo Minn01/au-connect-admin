@@ -6,6 +6,7 @@ import {
   ReportTargetType,
 } from "@/lib/generated/prisma";
 import prisma from "@/lib/prisma";
+import { enumValue, positiveInteger } from "@/lib/apiQuery";
 import { NextRequest, NextResponse } from "next/server";
 
 
@@ -14,20 +15,6 @@ const reportReasons = new Set(Object.values(ReportReason));
 const reportTargetTypes = new Set(Object.values(ReportTargetType));
 
 type SortOption = "newest" | "oldest" | "most-reported";
-
-function positiveInteger(value: string | null, fallback: number) {
-  if (value === null || !/^\d+$/.test(value)) return fallback;
-
-  const parsed = Number(value);
-  return parsed > 0 ? parsed : fallback;
-}
-
-function enumValue<T extends string>(value: string | null, values: Set<T>) {
-  if (!value) return undefined;
-
-  const normalized = value.toUpperCase().replaceAll("-", "_") as T;
-  return values.has(normalized) ? normalized : null;
-}
 
 export async function GET(request: NextRequest) {
   try {

@@ -26,6 +26,9 @@ export const ANNOUNCEMENTS_API_PATH = `${BASE_API_PATH}/announcements`;
 export const COMMUNITIES_API_PATH = `${BASE_API_PATH}/communities`;
 export const COMMUNITY_API_PATH = (id: string) => `${COMMUNITIES_API_PATH}/${id}`;
 export const USERS_API_PATH = `${BASE_API_PATH}/users`;
+export const USER_ACTION_API_PATH = (id: string) =>
+  `${USERS_API_PATH}/${id}/actions`;
+export const HISTORY_API_PATH = `${BASE_API_PATH}/history`;
 export const VERIFICATIONS_API_PATH = BASE_API_PATH + "/verifications";
 export const VERIFICATION_API_PATH = (id: string) => BASE_API_PATH + `/verifications/${id}`;
 export const VERIFICATION_DOCUMENT_API_PATH = (id: string) =>

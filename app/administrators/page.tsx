@@ -98,7 +98,7 @@ export default function AdministratorsPage() {
             <h1 className="text-3xl font-bold tracking-tight">Administrators</h1>
             <p className="mt-2 text-sm text-gray-500">Manage access to the AU Connect administration portal.</p>
           </div>
-          <button onClick={() => { setModalOpen(true); setError(""); }} className="flex cursor-pointer items-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-200 transition hover:bg-red-700">
+          <button onClick={() => { setModalOpen(true); setError(""); }} className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-200 transition hover:bg-red-700">
             <Plus size={18} /> Add administrator
           </button>
         </div>
@@ -125,7 +125,7 @@ export default function AdministratorsPage() {
                       <td className="px-6 py-5"><select aria-label={`Role for ${admin.email}`} value={admin.role} onChange={(event) => updateAdmin(admin.id, { role: event.target.value as AdminRole })} className="cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100">{Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></td>
                       <td className="px-6 py-5"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${admin.status === "ACTIVE" ? "bg-green-50 text-green-700" : admin.status === "PENDING" ? "bg-amber-50 text-amber-700" : "bg-gray-100 text-gray-500"}`}>{admin.status.charAt(0) + admin.status.slice(1).toLowerCase()}</span></td>
                       <td className="px-6 py-5 text-gray-500">{relativeDate(admin.lastLoginAt)}</td>
-                      <td className="px-6 py-5 text-right">{admin.status !== "PENDING" && <button onClick={() => { const nextStatus = admin.status === "DISABLED" ? "ACTIVE" : "DISABLED"; if (nextStatus === "ACTIVE" || window.confirm(`Disable ${admin.email}? They will immediately lose access.`)) updateAdmin(admin.id, { status: nextStatus }); }} className={`cursor-pointer rounded-lg border px-3 py-2 text-xs font-semibold transition ${admin.status === "DISABLED" ? "border-green-200 text-green-700 hover:bg-green-50" : "border-gray-200 text-gray-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"}`}>{admin.status === "DISABLED" ? "Reactivate" : "Disable"}</button>}</td>
+                      <td className="px-6 py-5 text-right">{admin.status !== "PENDING" && <button onClick={() => { const nextStatus = admin.status === "DISABLED" ? "ACTIVE" : "DISABLED"; if (nextStatus === "ACTIVE" || window.confirm(`Disable ${admin.email}? They will immediately lose access.`)) updateAdmin(admin.id, { status: nextStatus }); }} className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${admin.status === "DISABLED" ? "border-green-200 text-green-700 hover:bg-green-50" : "border-gray-200 text-gray-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"}`}>{admin.status === "DISABLED" ? "Reactivate" : "Disable"}</button>}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -139,13 +139,13 @@ export default function AdministratorsPage() {
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/45 p-4 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) setModalOpen(false); }}>
           <form onSubmit={addAdmin} className="w-full max-w-md rounded-2xl bg-white p-7 shadow-2xl">
-            <div className="flex items-start justify-between"><div><h2 className="text-xl font-bold">Add administrator</h2><p className="mt-1 text-sm text-gray-500">Pre-authorize a trusted AU account.</p></div><button type="button" onClick={() => setModalOpen(false)} className="cursor-pointer rounded-lg p-2 text-gray-400 hover:bg-gray-100"><X size={18} /></button></div>
+            <div className="flex items-start justify-between"><div><h2 className="text-xl font-bold">Add administrator</h2><p className="mt-1 text-sm text-gray-500">Pre-authorize a trusted AU account.</p></div><button type="button" onClick={() => setModalOpen(false)} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100"><X size={18} /></button></div>
             <label className="mt-7 block text-sm font-semibold">Email</label>
             <input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="professor@au.edu" className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-red-400 focus:ring-4 focus:ring-red-50" />
             <label className="mt-5 block text-sm font-semibold">Role</label>
             <select value={role} onChange={(event) => setRole(event.target.value as AdminRole)} className="mt-2 w-full cursor-pointer rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-50">{Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
             <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-xs leading-5 text-red-700">They will sign in using their Assumption University Microsoft account. No password is created here.</p>
-            <div className="mt-7 flex justify-end gap-3"><button type="button" onClick={() => setModalOpen(false)} className="cursor-pointer rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-500 hover:bg-gray-100">Cancel</button><button disabled={saving} className="flex cursor-pointer items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60">{saving && <Loader2 size={16} className="animate-spin" />} Add administrator</button></div>
+            <div className="mt-7 flex justify-end gap-3"><button type="button" onClick={() => setModalOpen(false)} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-500 hover:bg-gray-100">Cancel</button><button disabled={saving} className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60">{saving && <Loader2 size={16} className="animate-spin" />} Add administrator</button></div>
           </form>
         </div>
       )}
