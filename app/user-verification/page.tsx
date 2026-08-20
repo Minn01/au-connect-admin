@@ -17,6 +17,7 @@ import {
   VERIFICATION_API_PATH,
   VERIFICATION_DOCUMENT_API_PATH,
 } from "@/constants";
+import ConfirmModal from "@/app/components/ConfirmModal";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -115,6 +116,7 @@ function DetailDrawer({
     "APPROVED" | "REJECTED" | "UNAPPROVE" | null
   >(null);
   const [error, setError] = useState("");
+  const [pendingReview, setPendingReview] = useState<"REJECTED" | "UNAPPROVE" | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -145,6 +147,7 @@ function DetailDrawer({
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setSubmitting(null);
+      setPendingReview(null);
     }
   };
 
@@ -256,7 +259,7 @@ function DetailDrawer({
                   </button>
                   <button
                     disabled={!!submitting}
-                    onClick={() => handleReview("REJECTED")}
+                    onClick={() => setPendingReview("REJECTED")}
                     className="flex-1 rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
                   >
                     {submitting === "REJECTED" ? "Rejecting…" : "Reject"}
@@ -285,7 +288,7 @@ function DetailDrawer({
                 {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
                 <button
                   disabled={!!submitting}
-                  onClick={() => handleReview("UNAPPROVE")}
+                  onClick={() => setPendingReview("UNAPPROVE")}
                   className="mt-3 w-full rounded-lg border border-amber-500 bg-amber-50 py-2.5 text-sm font-semibold text-amber-700 hover:bg-amber-100 disabled:opacity-50"
                 >
                   {submitting === "UNAPPROVE" ? "Unapproving…" : "Unapprove"}
@@ -316,6 +319,19 @@ function DetailDrawer({
           </div>
         )}
       </div>
+      <ConfirmModal
+        isOpen={pendingReview !== null}
+        title={pendingReview === "REJECTED" ? "Reject verification?" : "Reverse verification?"}
+        description={pendingReview === "REJECTED"
+          ? `This will reject ${detail?.user.username ?? "this user"}'s verification request and notify them of the decision.`
+          : `This will revoke ${detail?.user.username ?? "this user"}'s verified status and return the request to the pending queue.`}
+        confirmLabel={pendingReview === "REJECTED" ? "Reject" : "Reverse verification"}
+        isConfirming={submitting !== null}
+        onConfirm={() => {
+          if (pendingReview) handleReview(pendingReview);
+        }}
+        onClose={() => setPendingReview(null)}
+      />
     </div>
   );
 }

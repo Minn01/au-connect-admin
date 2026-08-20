@@ -28,6 +28,7 @@ import {
   USER_VERIFICATION_PAGE_PATH,
   LOGIN_PAGE_PATH,
 } from "@/constants";
+import ConfirmModal from "@/app/components/ConfirmModal";
 
 type CurrentAdmin = {
   id: string;
@@ -55,6 +56,7 @@ const navItems = [
 export default function Sidebar({ admin }: { admin: CurrentAdmin | null }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(true);
+  const [isLogoutConfirmationOpen, setIsLogoutConfirmationOpen] = useState(false);
 
   if (pathname === LOGIN_PAGE_PATH) return null;
 
@@ -132,9 +134,10 @@ export default function Sidebar({ admin }: { admin: CurrentAdmin | null }) {
               )}
             </div>
 
-            <form action={ADMIN_LOGOUT_API_PATH} method="post">
+            <form id="logout-form" action={ADMIN_LOGOUT_API_PATH} method="post">
               <button
-                type="submit"
+                type="button"
+                onClick={() => setIsLogoutConfirmationOpen(true)}
                 aria-label="Sign out"
                 title="Sign out"
                 className="rounded-lg p-2 text-slate-400 transition hover:bg-red-100 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
@@ -162,6 +165,15 @@ export default function Sidebar({ admin }: { admin: CurrentAdmin | null }) {
           <ChevronRight className="h-4 w-4" />
         )}
       </button>
+
+      <ConfirmModal
+        isOpen={isLogoutConfirmationOpen}
+        title="Sign out?"
+        description="You will need to sign in again to access the AU Connect admin dashboard."
+        confirmLabel="Sign out"
+        confirmForm="logout-form"
+        onClose={() => setIsLogoutConfirmationOpen(false)}
+      />
     </div>
   );
 }

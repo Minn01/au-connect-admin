@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { CheckCircle2, Loader2, Plus, ShieldCheck, UserCog, X } from "lucide-react";
 
 import { ADMIN_API_PATH, ADMINS_API_PATH } from "@/constants";
+import ConfirmModal from "@/app/components/ConfirmModal";
 
 type AdminRole = "SUPER_ADMIN" | "ADMIN" | "MODERATOR";
 type AdminStatus = "PENDING" | "ACTIVE" | "DISABLED";
@@ -15,6 +16,10 @@ type Administrator = {
   status: AdminStatus;
   createdAt: string;
   lastLoginAt: string | null;
+};
+type PendingAdminChange = {
+  admin: Administrator;
+  change: { role?: AdminRole; status?: AdminStatus };
 };
 
 const roleLabels: Record<AdminRole, string> = {
@@ -42,6 +47,8 @@ export default function AdministratorsPage() {
   const [role, setRole] = useState<AdminRole>("MODERATOR");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [pendingAdminChange, setPendingAdminChange] = useState<PendingAdminChange | null>(null);
+  const [updating, setUpdating] = useState(false);
 
   const loadAdmins = useCallback(async () => {
     const response = await fetch(ADMINS_API_PATH, { cache: "no-store" });
@@ -77,16 +84,29 @@ export default function AdministratorsPage() {
   }
 
   async function updateAdmin(id: string, change: { role?: AdminRole; status?: AdminStatus }) {
+    setUpdating(true);
     setError("");
-    const response = await fetch(ADMIN_API_PATH(id), {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(change),
-    });
-    const json = await response.json();
-    if (!response.ok) return setError(json.error ?? "Could not update administrator");
-    setAdmins((current) => current.map((item) => item.id === id ? json.admin : item));
-    setMessage("Administrator updated.");
+    try {
+      const response = await fetch(ADMIN_API_PATH(id), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(change),
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        setError(json.error ?? "Could not update administrator");
+        setPendingAdminChange(null);
+        return;
+      }
+      setAdmins((current) => current.map((item) => item.id === id ? json.admin : item));
+      setMessage("Administrator updated.");
+      setPendingAdminChange(null);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not update administrator");
+      setPendingAdminChange(null);
+    } finally {
+      setUpdating(false);
+    }
   }
 
   return (
@@ -122,10 +142,10 @@ export default function AdministratorsPage() {
                   {admins.map((admin) => (
                     <tr key={admin.id} className="transition hover:bg-red-50/30">
                       <td className="px-6 py-5"><div className="font-semibold text-gray-800">{admin.name ?? "Invitation pending"}</div><div className="mt-1 text-xs text-gray-400">{admin.email}</div></td>
-                      <td className="px-6 py-5"><select aria-label={`Role for ${admin.email}`} value={admin.role} onChange={(event) => updateAdmin(admin.id, { role: event.target.value as AdminRole })} className="cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100">{Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></td>
+                      <td className="px-6 py-5"><select aria-label={`Role for ${admin.email}`} value={admin.role} onChange={(event) => setPendingAdminChange({ admin, change: { role: event.target.value as AdminRole } })} className="cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100">{Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></td>
                       <td className="px-6 py-5"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${admin.status === "ACTIVE" ? "bg-green-50 text-green-700" : admin.status === "PENDING" ? "bg-amber-50 text-amber-700" : "bg-gray-100 text-gray-500"}`}>{admin.status.charAt(0) + admin.status.slice(1).toLowerCase()}</span></td>
                       <td className="px-6 py-5 text-gray-500">{relativeDate(admin.lastLoginAt)}</td>
-                      <td className="px-6 py-5 text-right">{admin.status !== "PENDING" && <button onClick={() => { const nextStatus = admin.status === "DISABLED" ? "ACTIVE" : "DISABLED"; if (nextStatus === "ACTIVE" || window.confirm(`Disable ${admin.email}? They will immediately lose access.`)) updateAdmin(admin.id, { status: nextStatus }); }} className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${admin.status === "DISABLED" ? "border-green-200 text-green-700 hover:bg-green-50" : "border-gray-200 text-gray-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"}`}>{admin.status === "DISABLED" ? "Reactivate" : "Disable"}</button>}</td>
+                      <td className="px-6 py-5 text-right">{admin.status !== "PENDING" && <button onClick={() => { const nextStatus = admin.status === "DISABLED" ? "ACTIVE" : "DISABLED"; if (nextStatus === "ACTIVE") updateAdmin(admin.id, { status: nextStatus }); else setPendingAdminChange({ admin, change: { status: nextStatus } }); }} className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${admin.status === "DISABLED" ? "border-green-200 text-green-700 hover:bg-green-50" : "border-gray-200 text-gray-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"}`}>{admin.status === "DISABLED" ? "Reactivate" : "Disable"}</button>}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -149,6 +169,23 @@ export default function AdministratorsPage() {
           </form>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={pendingAdminChange !== null}
+        title={pendingAdminChange?.change.status === "DISABLED" ? "Disable administrator?" : "Change administrator role?"}
+        description={pendingAdminChange?.change.status === "DISABLED"
+          ? `${pendingAdminChange.admin.email} will immediately lose access to the admin portal.`
+          : pendingAdminChange?.change.role
+            ? `${pendingAdminChange.admin.email} will change from ${roleLabels[pendingAdminChange.admin.role]} to ${roleLabels[pendingAdminChange.change.role]}.`
+            : "This administrator's access will change."}
+        confirmLabel={pendingAdminChange?.change.status === "DISABLED" ? "Disable" : "Change role"}
+        tone={pendingAdminChange?.change.status === "DISABLED" ? "danger" : "warning"}
+        isConfirming={updating}
+        onConfirm={() => {
+          if (pendingAdminChange) updateAdmin(pendingAdminChange.admin.id, pendingAdminChange.change);
+        }}
+        onClose={() => setPendingAdminChange(null)}
+      />
     </div>
   );
 }

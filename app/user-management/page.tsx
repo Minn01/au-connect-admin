@@ -28,6 +28,7 @@ import type {
 } from "@/types/UserManagement";
 import { useUserActionMutation } from "./utils/userActionFetchFunction";
 import { useUsersQuery } from "./utils/usersFetchFunction";
+import ConfirmModal from "@/app/components/ConfirmModal";
 
 const statusStyles: Record<AccountStatus, string> = {
   ACTIVE: "border-emerald-200 bg-emerald-50 text-emerald-700",
@@ -83,6 +84,7 @@ export default function UserManagementPage() {
   const [actionNote, setActionNote] = useState("");
   const [durationDays, setDurationDays] = useState("7");
   const [actionMessage, setActionMessage] = useState("");
+  const [isModerationConfirmationOpen, setIsModerationConfirmationOpen] = useState(false);
   const usersQuery = useUsersQuery({
     page,
     limit,
@@ -129,6 +131,7 @@ export default function UserManagementPage() {
 
   function closeUserDetails() {
     if (actionSaving) return;
+    setIsModerationConfirmationOpen(false);
     setSelected(null);
     setPendingAction(null);
     actionMutation.reset();
@@ -136,6 +139,7 @@ export default function UserManagementPage() {
   }
 
   function chooseAction(action: ModerationAction) {
+    setIsModerationConfirmationOpen(false);
     setPendingAction(action);
     setActionNote("");
     setDurationDays("7");
@@ -145,6 +149,15 @@ export default function UserManagementPage() {
 
   function applyModerationAction(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pendingAction === "BAN_USER" || pendingAction === "REACTIVATE_USER") {
+      setIsModerationConfirmationOpen(true);
+      return;
+    }
+
+    executeModerationAction();
+  }
+
+  function executeModerationAction() {
     if (!selected || !pendingAction) return;
 
     actionMutation.reset();
@@ -169,7 +182,9 @@ export default function UserManagementPage() {
           setPendingAction(null);
           setActionNote("");
           setActionMessage(data.message || "Moderation action applied.");
+          setIsModerationConfirmationOpen(false);
         },
+        onError: () => setIsModerationConfirmationOpen(false),
       },
     );
   }
@@ -702,6 +717,19 @@ export default function UserManagementPage() {
           </aside>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={isModerationConfirmationOpen}
+        title={pendingAction === "BAN_USER" ? "Ban user?" : "Reactivate user?"}
+        description={pendingAction === "BAN_USER"
+          ? `${selected?.username ?? "This user"} will lose access to their account until an administrator reactivates it.`
+          : `${selected?.username ?? "This user"} will regain access to their account.`}
+        confirmLabel={pendingAction === "BAN_USER" ? "Ban user" : "Reactivate user"}
+        tone={pendingAction === "BAN_USER" ? "danger" : "warning"}
+        isConfirming={actionSaving}
+        onConfirm={executeModerationAction}
+        onClose={() => setIsModerationConfirmationOpen(false)}
+      />
     </div>
   );
 }
