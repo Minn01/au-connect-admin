@@ -16,5 +16,7 @@ export default function handleViewOriginalPost(
     routePath = `${MAIN_APP_PATH}/profile/${cleanUsername}-${targetId}`;
   }
 
-  window.location.href = routePath;
+  if (routePath) {
+    window.open(routePath, "_blank", "noopener,noreferrer");
+  }
 }

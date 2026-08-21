@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import type { CommunityStatus, Prisma } from "@/lib/generated/prisma";
 import prisma from "@/lib/prisma";
+import { AdminAuthError, requireAdmin } from "@/lib/adminAuth";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -104,6 +105,9 @@ async function resolveSlug(
 
 export async function GET(_req: NextRequest, { params }: Params) {
   try {
+    // admin auth check (route level)
+    await requireAdmin(_req);
+
     const { id } = await params;
 
     if (!OBJECT_ID_PATTERN.test(id)) {
@@ -127,6 +131,13 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     return NextResponse.json({ community });
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+
     console.error("Fetch community failed:", error);
     return NextResponse.json(
       { error: "Failed to fetch community" },
@@ -137,6 +148,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
+    // admin auth check (route level)
+    await requireAdmin(req);
+
     const { id } = await params;
 
     if (!OBJECT_ID_PATTERN.test(id)) {
@@ -227,6 +241,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     return NextResponse.json({ community });
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+
     console.error("Update community failed:", error);
     return NextResponse.json(
       { error: "Failed to update community" },

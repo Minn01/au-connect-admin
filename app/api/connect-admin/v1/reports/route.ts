@@ -8,6 +8,7 @@ import {
 import prisma from "@/lib/prisma";
 import { enumValue, positiveInteger } from "@/lib/apiQuery";
 import { NextRequest, NextResponse } from "next/server";
+import { AdminAuthError, requireAdmin } from "@/lib/adminAuth";
 
 
 const reportStatuses = new Set(Object.values(ReportStatus));
@@ -18,6 +19,9 @@ type SortOption = "newest" | "oldest" | "most-reported";
 
 export async function GET(request: NextRequest) {
   try {
+    // admin auth check (route level)
+    await requireAdmin(request);
+
     // get and validate search params
     const searchParams = request.nextUrl.searchParams;
     const page = positiveInteger(searchParams.get("page"), 1);
@@ -161,6 +165,13 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+
     console.error("Error fetching reports:", error);
     return NextResponse.json(
       { error: "Internal server error while fetching reports." },

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAnnouncementStatus } from "@/lib/announcementHelpers";
 import { deleteBlobIfExists, isSafeInternalBlobName } from "@/lib/azureMedia";
+import { AdminAuthError, requireAdmin } from "@/lib/adminAuth";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -10,6 +11,8 @@ type Params = {
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
+    await requireAdmin(req);
+
     const { id } = await params;
     const body = await req.json();
 
@@ -113,6 +116,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     return NextResponse.json({ announcement });
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+
     console.error("Update announcement failed:", error);
     return NextResponse.json(
       { error: "Failed to update announcement" },
@@ -123,6 +133,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
   try {
+    await requireAdmin(_req);
+
     const { id } = await params;
     const existing = await prisma.announcement.findUnique({ where: { id } });
 
@@ -145,6 +157,13 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+
     console.error("Delete announcement failed:", error);
     return NextResponse.json(
       { error: "Failed to delete announcement" },

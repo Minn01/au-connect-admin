@@ -1,9 +1,13 @@
+import { AdminAuthError, requireAdmin } from "@/lib/adminAuth";
 import { ReportStatus, ReportTargetType } from "@/lib/generated/prisma";
 import prisma from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    // admin auth check (route level)
+    await requireAdmin(req);
+
     const now = new Date();
 
     const startOfToday = new Date(now);
@@ -46,10 +50,7 @@ export async function GET() {
       prisma.report.count({
         where: {
           status: {
-            in: [
-              ReportStatus.DISMISSED,
-              ReportStatus.ACTION_TAKEN,
-            ],
+            in: [ReportStatus.DISMISSED, ReportStatus.ACTION_TAKEN],
           },
         },
       }),
@@ -92,8 +93,14 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Error fetching report metrics:", error);
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
 
+    console.error("Error fetching report metrics:", error);
     return NextResponse.json(
       {
         error: "Internal server error while fetching report metrics.",

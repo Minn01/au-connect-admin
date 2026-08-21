@@ -1,3 +1,4 @@
+import { AdminAuthError, requireAdmin } from "@/lib/adminAuth";
 import {
   AdminActionType,
   PostModerationStatus,
@@ -40,6 +41,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    // admin auth check (route level)
+    await requireAdmin(request);
+
     const { id } = await params;
 
     if (!/^[a-f\d]{24}$/i.test(id)) {
@@ -52,7 +56,10 @@ export async function PATCH(
     const body = (await request.json()) as ActionBody;
     const requestedAction = body.action?.toUpperCase().replaceAll("-", "_");
 
-    if (!requestedAction || !adminActions.has(requestedAction as AdminActionType)) {
+    if (
+      !requestedAction ||
+      !adminActions.has(requestedAction as AdminActionType)
+    ) {
       return NextResponse.json(
         { error: "A valid admin action is required." },
         { status: 400 },
@@ -78,7 +85,9 @@ export async function PATCH(
 
     if (!allowedActions.has(action)) {
       return NextResponse.json(
-        { error: `${action} cannot be applied to a ${report.targetType} case.` },
+        {
+          error: `${action} cannot be applied to a ${report.targetType} case.`,
+        },
         { status: 400 },
       );
     }
@@ -91,7 +100,9 @@ export async function PATCH(
         body.durationDays > 365
       ) {
         return NextResponse.json(
-          { error: "A suspension duration between 1 and 365 days is required." },
+          {
+            error: "A suspension duration between 1 and 365 days is required.",
+          },
           { status: 400 },
         );
       }
@@ -173,7 +184,9 @@ export async function PATCH(
 
           if (action === AdminActionType.SUSPEND_USER) {
             const suspendedUntil = new Date();
-            suspendedUntil.setDate(suspendedUntil.getDate() + body.durationDays!);
+            suspendedUntil.setDate(
+              suspendedUntil.getDate() + body.durationDays!,
+            );
             await tx.user.update({
               where: { id },
               data: {
@@ -269,6 +282,13 @@ export async function PATCH(
       message: "The moderation action was applied successfully.",
     });
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+
     console.error("Error applying moderation action:", error);
     return NextResponse.json(
       { error: "Internal server error while applying the moderation action." },

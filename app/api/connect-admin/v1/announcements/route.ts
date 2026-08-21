@@ -1,35 +1,55 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
-import { getOptionalAdminContext } from "@/lib/adminAuth";
+import {
+  AdminAuthError,
+  requireAdmin,
+} from "@/lib/adminAuth";
 import {
   getAnnouncementStatus,
   syncAnnouncementStatuses,
 } from "@/lib/announcementHelpers";
 import { isSafeInternalBlobName } from "@/lib/azureMedia";
 
-export async function GET() {
-  await syncAnnouncementStatuses(prisma);
+export async function GET(req: NextRequest) {
+  try {
+    // admin auth check
+    await requireAdmin(req);
 
-  const announcements = await prisma.announcement.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+    await syncAnnouncementStatuses(prisma);
 
-  return NextResponse.json({
-    announcements: announcements.map((announcement) => ({
-      ...announcement,
-      status: getAnnouncementStatus(
-        announcement.startDate,
-        announcement.endDate
-      ),
-    })),
-  });
+    const announcements = await prisma.announcement.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json({
+      announcements: announcements.map((announcement) => ({
+        ...announcement,
+        status: getAnnouncementStatus(
+          announcement.startDate,
+          announcement.endDate,
+        ),
+      })),
+    });
+  } catch (err) {
+    if (err instanceof AdminAuthError) {
+      return NextResponse.json(
+        { error: err.message },
+        { status: err.status },
+      );
+    }
+
+    console.error("Fetch announcements failed:", err);
+    return NextResponse.json(
+      { error: "Failed to fetch announcements" },
+      { status: 500 },
+    );
+  }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    // getOptionalAdminContext calls getCurrentAdmin
-    const admin = await getOptionalAdminContext(req);
+    const admin = await requireAdmin(req);
     const body = await req.json();
 
     const title = typeof body?.title === "string" ? body.title.trim() : "";
@@ -52,14 +72,14 @@ export async function POST(req: NextRequest) {
     if (!description) {
       return NextResponse.json(
         { error: "Description is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!thumbnailBlobName) {
       return NextResponse.json(
         { error: "Thumbnail image is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -71,7 +91,7 @@ export async function POST(req: NextRequest) {
     if (Number.isNaN(startDate.getTime())) {
       return NextResponse.json(
         { error: "Start date is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -82,28 +102,28 @@ export async function POST(req: NextRequest) {
     if (startDate < today) {
       return NextResponse.json(
         { error: "Start date cannot be in the past" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (endDate && endDate < startDate) {
       return NextResponse.json(
         { error: "End date must be on or after start date" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (thumbnailBlobName && !isSafeInternalBlobName(thumbnailBlobName)) {
       return NextResponse.json(
         { error: "Invalid thumbnail image" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (contentImageBlobName && !isSafeInternalBlobName(contentImageBlobName)) {
       return NextResponse.json(
         { error: "Invalid content image" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -122,10 +142,17 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ announcement }, { status: 201 });
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+
     console.error("Create announcement failed:", error);
     return NextResponse.json(
       { error: "Failed to create announcement" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

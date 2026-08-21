@@ -1,3 +1,4 @@
+import { AdminAuthError, requireAdmin } from "@/lib/adminAuth";
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -6,6 +7,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    // check admin auth (route level)
+    await requireAdmin(_request);
+
     const { id } = await params;
 
     if (!/^[a-f\d]{24}$/i.test(id)) {
@@ -105,6 +109,13 @@ export async function GET(
       },
     });
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+
     console.error("Error fetching report case:", error);
     return NextResponse.json(
       { error: "Internal server error while fetching the report case." },

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { createUploadUrl, IMAGE_EXTENSIONS } from "@/lib/azureMedia";
-import { getOptionalAdminContext } from "@/lib/adminAuth";
+import { AdminAuthError, requireAdmin } from "@/lib/adminAuth";
 
 const ANNOUNCEMENT_IMAGE_FOLDER = "announcements";
 
 export async function POST(req: NextRequest) {
   try {
-    getOptionalAdminContext(req);
+    // admin auth check (route level)
+    await requireAdmin(req);
 
     const body = await req.json();
     const fileType = body?.fileType;
@@ -30,6 +31,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ uploadUrl, blobName });
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+
     console.error("Announcement upload URL failed:", error);
     return NextResponse.json(
       { error: "Upload URL failed" },

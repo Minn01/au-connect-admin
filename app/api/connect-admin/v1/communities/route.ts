@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import type { Prisma } from "@/lib/generated/prisma";
-import { getOptionalAdminContext } from "@/lib/adminAuth";
+import { AdminAuthError, requireAdmin } from "@/lib/adminAuth";
 import prisma from "@/lib/prisma";
 
 const OBJECT_ID_PATTERN = /^[a-f\d]{24}$/i;
@@ -90,6 +90,8 @@ function communitySelect() {
 
 export async function GET(req: NextRequest) {
   try {
+    await requireAdmin(req);
+
     const search = req.nextUrl.searchParams.get("search")?.trim() ?? "";
     const status = req.nextUrl.searchParams.get("status");
 
@@ -115,6 +117,13 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ communities });
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+
     console.error("Fetch communities failed:", error);
     return NextResponse.json(
       { error: "Failed to fetch communities" },
@@ -125,7 +134,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const admin = await getOptionalAdminContext(req);
+    const admin = await requireAdmin(req);
     const body = await req.json();
 
     const name = typeof body?.name === "string" ? body.name.trim() : "";
@@ -170,6 +179,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ community }, { status: 201 });
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+
     console.error("Create community failed:", error);
     return NextResponse.json(
       { error: "Failed to create community" },
