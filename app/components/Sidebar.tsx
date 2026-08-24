@@ -53,12 +53,25 @@ const navItems = [
   { label: "Administrators", href: ADMINISTRATORS_PAGE_PATH, icon: ShieldUser },
 ];
 
+const exactAppPagePaths = [
+  MAIN_PAGE_PATH,
+  USER_MANAGEMENT_PAGE_PATH,
+  USER_VERIFICATION_PAGE_PATH,
+  REPORTS_PAGE_PATH,
+  COMMUNITY_PAGE_PATH,
+  ANNOUNCEMENTS_PAGE_PATH,
+  ADMINISTRATORS_PAGE_PATH,
+];
+
 export default function Sidebar({ admin }: { admin: CurrentAdmin | null }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(true);
   const [isLogoutConfirmationOpen, setIsLogoutConfirmationOpen] = useState(false);
 
-  if (pathname === LOGIN_PAGE_PATH) return null;
+  const isKnownPage =
+    exactAppPagePaths.includes(pathname) || /^\/reports\/[^/]+$/.test(pathname);
+
+  if (pathname === LOGIN_PAGE_PATH || !isKnownPage) return null;
 
   return (
     <div
