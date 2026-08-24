@@ -4,6 +4,7 @@ import "./globals.css";
 import Sidebar from "./components/Sidebar";
 import Provider from "./Provider";
 import { getCurrentAdmin } from "@/lib/adminAuth";
+import prisma from "@/lib/prisma";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,12 +27,19 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const currentAdmin = await getCurrentAdmin();
+  const currentUser = currentAdmin
+    ? await prisma.user.findUnique({
+        where: { email: currentAdmin.email },
+        select: { profilePic: true },
+      })
+    : null;
   const admin = currentAdmin
     ? {
         id: currentAdmin.id,
         email: currentAdmin.email,
         name: currentAdmin.name,
         role: currentAdmin.role,
+        profilePic: currentUser?.profilePic ?? null,
       }
     : null;
 

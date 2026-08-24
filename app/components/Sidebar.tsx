@@ -29,12 +29,14 @@ import {
   LOGIN_PAGE_PATH,
 } from "@/constants";
 import ConfirmModal from "@/app/components/ConfirmModal";
+import { useResolvedAdminMediaUrl } from "@/lib/useResolvedAdminMediaUrl";
 
 type CurrentAdmin = {
   id: string;
   email: string;
   name: string | null;
   role: "SUPER_ADMIN" | "ADMIN" | "MODERATOR";
+  profilePic: string | null;
 };
 
 const roleLabels: Record<CurrentAdmin["role"], string> = {
@@ -67,6 +69,9 @@ export default function Sidebar({ admin }: { admin: CurrentAdmin | null }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(true);
   const [isLogoutConfirmationOpen, setIsLogoutConfirmationOpen] = useState(false);
+  const [profileImageFailed, setProfileImageFailed] = useState(false);
+  const profileImageUrl = useResolvedAdminMediaUrl(admin?.profilePic);
+  const showProfileImage = Boolean(profileImageUrl) && !profileImageFailed;
 
   const isKnownPage =
     exactAppPagePaths.includes(pathname) || /^\/reports\/[^/]+$/.test(pathname);
@@ -129,8 +134,20 @@ export default function Sidebar({ admin }: { admin: CurrentAdmin | null }) {
 
         <div className="border-t border-slate-100 p-3">
           <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-sm font-bold uppercase text-red-700">
-              {admin?.name?.charAt(0) ?? admin?.email.charAt(0) ?? "A"}
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-red-100 text-sm font-bold uppercase text-red-700">
+              {showProfileImage ? (
+                <Image
+                  src={profileImageUrl}
+                  alt={`${admin?.name ?? "Administrator"}'s profile`}
+                  fill
+                  sizes="40px"
+                  className="object-cover"
+                  unoptimized
+                  onError={() => setProfileImageFailed(true)}
+                />
+              ) : (
+                admin?.name?.charAt(0) ?? admin?.email.charAt(0) ?? "A"
+              )}
             </div>
 
             <div className="min-w-0 flex-1">
