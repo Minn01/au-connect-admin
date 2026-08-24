@@ -1,10 +1,13 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { CheckCircle2, Loader2, Plus, ShieldCheck, UserCog, X } from "lucide-react";
+import Image from "next/image";
+import { Check, CheckCircle2, Loader2, Plus, Search, ShieldCheck, UserCog, X } from "lucide-react";
 
-import { ADMIN_API_PATH, ADMINS_API_PATH } from "@/constants";
+import { ADMIN_API_PATH, ADMINS_API_PATH, USERS_API_PATH } from "@/constants";
 import ConfirmModal from "@/app/components/ConfirmModal";
+import { useResolvedAdminMediaUrl } from "@/lib/useResolvedAdminMediaUrl";
+import type { UserRecord, UsersResponse } from "@/types/UserManagement";
 
 type AdminRole = "SUPER_ADMIN" | "ADMIN" | "MODERATOR";
 type AdminStatus = "PENDING" | "ACTIVE" | "DISABLED";
@@ -38,12 +41,56 @@ function relativeDate(value: string | null) {
   return date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+function UserSearchResult({
+  user,
+  onSelect,
+}: {
+  user: UserRecord;
+  onSelect: (user: UserRecord) => void;
+}) {
+  const profileImageUrl = useResolvedAdminMediaUrl(user.profilePic);
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = Boolean(profileImageUrl) && !imageFailed;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(user)}
+      className="flex w-full items-center gap-3 border-b border-gray-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-red-50 focus-visible:bg-red-50 focus-visible:outline-none"
+    >
+      <span className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-red-100 text-xs font-bold uppercase text-red-700 ring-1 ring-gray-200">
+        {showImage ? (
+          <Image
+            src={profileImageUrl}
+            alt={`${user.username}'s profile`}
+            fill
+            sizes="40px"
+            className="object-cover"
+            unoptimized
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          user.username.charAt(0) || user.email.charAt(0)
+        )}
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-semibold text-gray-800">{user.username}</span>
+        <span className="block truncate text-xs text-gray-500">{user.email}</span>
+      </span>
+    </button>
+  );
+}
+
 export default function AdministratorsPage() {
   const [admins, setAdmins] = useState<Administrator[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [email, setEmail] = useState("");
+  const [userQuery, setUserQuery] = useState("");
+  const [userResults, setUserResults] = useState<UserRecord[]>([]);
+  const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
+  const [searchingUsers, setSearchingUsers] = useState(false);
+  const [userSearchError, setUserSearchError] = useState("");
   const [role, setRole] = useState<AdminRole>("MODERATOR");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -63,6 +110,55 @@ export default function AdministratorsPage() {
     loadAdmins().catch((reason) => setError(reason.message)).finally(() => setLoading(false));
   }, [loadAdmins]);
 
+  useEffect(() => {
+    if (!modalOpen || selectedUser || userQuery.trim().length < 2) return;
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      setSearchingUsers(true);
+      setUserSearchError("");
+      try {
+        const params = new URLSearchParams({
+          q: userQuery.trim(),
+          page: "1",
+          limit: "6",
+          sort: "username",
+        });
+        const response = await fetch(`${USERS_API_PATH}?${params}`, {
+          signal: controller.signal,
+        });
+        const json = (await response.json()) as UsersResponse & { error?: string };
+        if (!response.ok) throw new Error(json.error ?? "Could not search users");
+
+        const adminEmails = new Set(admins.map((admin) => admin.email.toLowerCase()));
+        setUserResults(
+          json.users.filter((user) => !adminEmails.has(user.email.toLowerCase()))
+        );
+      } catch (reason) {
+        if (!controller.signal.aborted) {
+          setUserSearchError(reason instanceof Error ? reason.message : "Could not search users");
+          setUserResults([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) setSearchingUsers(false);
+      }
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [admins, modalOpen, selectedUser, userQuery]);
+
+  function closeAddAdminModal() {
+    setModalOpen(false);
+    setUserQuery("");
+    setUserResults([]);
+    setSelectedUser(null);
+    setUserSearchError("");
+    setRole("MODERATOR");
+  }
+
   async function addAdmin(event: FormEvent) {
     event.preventDefault();
     setSaving(true);
@@ -70,15 +166,13 @@ export default function AdministratorsPage() {
     const response = await fetch(ADMINS_API_PATH, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, role }),
+      body: JSON.stringify({ userId: selectedUser?.id, role }),
     });
     const json = await response.json();
     setSaving(false);
     if (!response.ok) return setError(json.error ?? "Could not add administrator");
 
-    setModalOpen(false);
-    setEmail("");
-    setRole("MODERATOR");
+    closeAddAdminModal();
     setMessage(json.invitationSent ? "Administrator added and invitation sent." : "Administrator added. They can now sign in with Microsoft.");
     await loadAdmins();
   }
@@ -157,15 +251,58 @@ export default function AdministratorsPage() {
       </div>
 
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/45 p-4 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) setModalOpen(false); }}>
-          <form onSubmit={addAdmin} className="w-full max-w-md rounded-2xl bg-white p-7 shadow-2xl">
-            <div className="flex items-start justify-between"><div><h2 className="text-xl font-bold">Add administrator</h2><p className="mt-1 text-sm text-gray-500">Pre-authorize a trusted AU account.</p></div><button type="button" onClick={() => setModalOpen(false)} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100"><X size={18} /></button></div>
-            <label className="mt-7 block text-sm font-semibold">Email</label>
-            <input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="professor@au.edu" className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-red-400 focus:ring-4 focus:ring-red-50" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/45 p-4 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) closeAddAdminModal(); }}>
+          <form onSubmit={addAdmin} className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-7 shadow-2xl">
+            <div className="flex items-start justify-between"><div><h2 className="text-xl font-bold">Add administrator</h2><p className="mt-1 text-sm text-gray-500">Choose an existing AU Connect user.</p></div><button type="button" onClick={closeAddAdminModal} aria-label="Close" className="rounded-lg p-2 text-gray-400 hover:bg-gray-100"><X size={18} /></button></div>
+            <label htmlFor="admin-user-search" className="mt-7 block text-sm font-semibold">Search users</label>
+            <div className="relative mt-2">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                id="admin-user-search"
+                type="search"
+                autoComplete="off"
+                value={selectedUser ? `${selectedUser.username} · ${selectedUser.email}` : userQuery}
+                onChange={(event) => {
+                  setSelectedUser(null);
+                  setUserQuery(event.target.value);
+                  setUserResults([]);
+                }}
+                placeholder="Search by name or email"
+                className="w-full rounded-xl border border-gray-200 py-3 pl-11 pr-10 text-sm outline-none transition focus:border-red-400 focus:ring-4 focus:ring-red-50"
+              />
+              {(searchingUsers || selectedUser) && (
+                <span className="absolute right-4 top-1/2 -translate-y-1/2">
+                  {searchingUsers ? <Loader2 className="h-4 w-4 animate-spin text-gray-400" /> : <Check className="h-4 w-4 text-green-600" />}
+                </span>
+              )}
+            </div>
+
+            {!selectedUser && userQuery.trim().length >= 2 && (
+              <div className="mt-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
+                {userResults.map((user) => (
+                  <UserSearchResult
+                    key={user.id}
+                    user={user}
+                    onSelect={(selected) => {
+                      setSelectedUser(selected);
+                      setUserQuery("");
+                      setUserResults([]);
+                    }}
+                  />
+                ))}
+                {!searchingUsers && !userSearchError && userResults.length === 0 && (
+                  <p className="px-4 py-4 text-center text-xs text-gray-500">No eligible users found.</p>
+                )}
+                {userSearchError && <p className="px-4 py-3 text-xs text-red-600">{userSearchError}</p>}
+              </div>
+            )}
+            {!selectedUser && userQuery.trim().length < 2 && (
+              <p className="mt-2 text-xs text-gray-400">Enter at least 2 characters to search.</p>
+            )}
             <label className="mt-5 block text-sm font-semibold">Role</label>
             <select value={role} onChange={(event) => setRole(event.target.value as AdminRole)} className="mt-2 w-full cursor-pointer rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-50">{Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
             <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-xs leading-5 text-red-700">They will sign in using their Assumption University Microsoft account. No password is created here.</p>
-            <div className="mt-7 flex justify-end gap-3"><button type="button" onClick={() => setModalOpen(false)} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-500 hover:bg-gray-100">Cancel</button><button disabled={saving} className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60">{saving && <Loader2 size={16} className="animate-spin" />} Add administrator</button></div>
+            <div className="mt-7 flex justify-end gap-3"><button type="button" onClick={closeAddAdminModal} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-500 hover:bg-gray-100">Cancel</button><button disabled={saving || !selectedUser} className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60">{saving && <Loader2 size={16} className="animate-spin" />} Add administrator</button></div>
           </form>
         </div>
       )}

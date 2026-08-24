@@ -42,14 +42,23 @@ export async function POST(request: NextRequest) {
     const currentAdmin = await requireAdmin(request);
     requireSuperAdmin(currentAdmin);
     const body = await request.json();
-    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const userId = typeof body.userId === "string" ? body.userId.trim() : "";
     const role = body.role as AdminRole;
 
-    if (!emailPattern.test(email)) {
-      return NextResponse.json({ error: "Enter a valid email address" }, { status: 400 });
+    if (!userId) {
+      return NextResponse.json({ error: "Select an AU Connect user" }, { status: 400 });
     }
     if (!Object.values(AdminRole).includes(role)) {
       return NextResponse.json({ error: "Select a valid administrator role" }, { status: 400 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+    const email = user?.email.trim().toLowerCase() ?? "";
+    if (!user || !emailPattern.test(email)) {
+      return NextResponse.json({ error: "That AU Connect user could not be found" }, { status: 404 });
     }
 
     const existing = await prisma.admin.findUnique({ where: { email } });
