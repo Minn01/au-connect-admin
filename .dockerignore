@@ -1,0 +1,11 @@
+.git
+.github
+node_modules
+.next
+.env
+.env.*
+npm-debug.log*
+.DS_Store
+*.tsbuildinfo
+README.md
+ADMIN_AUTH.md
