@@ -1,10 +1,6 @@
 import type { NextConfig } from "next";
 
 const adminBasePath = "/connect-admin";
-const rootRedirectOrigin =
-  process.env.NODE_ENV === "production"
-    ? "https://life.au.edu"
-    : `http://localhost:${process.env.PORT || "3000"}`;
 if (
   process.env.NODE_ENV === "production" &&
   process.env.NEXT_PUBLIC_BASE_PATH !== adminBasePath
@@ -20,7 +16,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/",
-        destination: `${rootRedirectOrigin}${adminBasePath}`,
+        destination: adminBasePath,
         basePath: false,
         permanent: false,
       },
@@ -28,7 +24,7 @@ const nextConfig: NextConfig = {
         ? []
         : [{
             source: "/connect",
-            destination: `${rootRedirectOrigin}${adminBasePath}`,
+            destination: adminBasePath,
             basePath: false as const,
             permanent: false,
           }]),

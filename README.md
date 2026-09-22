@@ -47,16 +47,36 @@ In local development, `/` and `/connect` redirect to `/connect-admin`. The
 `/connect` redirect is excluded from production because that path belongs to
 the main app there.
 
-## Production path
+## Public admin URL and deployment path
 
-The admin app is published at `https://life.au.edu/connect-admin`. Set
+The admin path is always `/connect-admin`, regardless of hostname. Set
 `NEXT_PUBLIC_BASE_PATH=/connect-admin` **before** `next build`. The Docker image
 requires this build argument, and the deployment workflow supplies it. Changing
 the variable only when starting the container cannot change the compiled path.
-Production OAuth, invitation, and redirect URLs use `https://life.au.edu` as
-their origin; local development uses the local request origin. Register
-`https://life.au.edu/connect-admin/api/connect-admin/v1/auth/microsoft/callback`
-with Microsoft for the production app.
+Set the same build-time variable in Vercel project settings for preview and
+production builds.
+
+`ADMIN_PUBLIC_URL` is an optional **runtime** variable for absolute OAuth,
+authentication redirect, and invitation URLs. It must be a full HTTP(S) URL
+including `/connect-admin`; a trailing slash is accepted. Examples:
+
+```env
+# Local development (optional; the request origin is used when unset)
+ADMIN_PUBLIC_URL=http://localhost:3000/connect-admin
+
+# Production VM (set on the running container)
+ADMIN_PUBLIC_URL=https://life.au.edu/connect-admin
+```
+
+Leave `ADMIN_PUBLIC_URL` unset on Vercel previews so absolute URLs use the
+incoming preview host. Set it separately for a Vercel deployment only when a
+fixed canonical hostname is wanted. The `/` redirect stays on the incoming
+host. Register each hostname's exact callback URL with Microsoft before using
+OAuth there, for example
+`https://life.au.edu/connect-admin/api/connect-admin/v1/auth/microsoft/callback`.
+The Docker build does not need `ADMIN_PUBLIC_URL` as a build argument; pass it
+to the container at runtime. Keep the reverse proxy's public Host and scheme
+headers intact if relying on request-origin fallback behind a proxy.
 
 On the AU server, route both the exact path and paths beneath it to the admin
 container without changing the request URI:
@@ -82,7 +102,7 @@ Do not add a URI suffix to `proxy_pass`, strip `/connect-admin`, or add the
 prefix a second time. The live nginx configuration is maintained outside this
 repository. Its existing `/ -> /connect` rule must be replaced for the public
 root to send visitors to the admin app. The Next redirect handles requests for
-`/` that reach the admin server directly.
+`/` that reach the admin server directly and preserves their hostname.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
