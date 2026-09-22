@@ -43,6 +43,9 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 Open [http://localhost:3000/connect-admin](http://localhost:3000/connect-admin) with your browser to see the admin app.
+In local development, `/` and `/connect` redirect to `/connect-admin`. The
+`/connect` redirect is excluded from production because that path belongs to
+the main app there.
 
 ## Production path
 
@@ -68,11 +71,18 @@ location /connect-admin/ {
     proxy_pass http://127.0.0.1:ADMIN_PORT;
     # Use the same proxy headers as the other app locations.
 }
+
+# Replace the current domain-root rule to open the admin app:
+location = / {
+    return 307 /connect-admin;
+}
 ```
 
 Do not add a URI suffix to `proxy_pass`, strip `/connect-admin`, or add the
 prefix a second time. The live nginx configuration is maintained outside this
-repository. The main app owns the domain root redirect.
+repository. Its existing `/ -> /connect` rule must be replaced for the public
+root to send visitors to the admin app. The Next redirect handles requests for
+`/` that reach the admin server directly.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

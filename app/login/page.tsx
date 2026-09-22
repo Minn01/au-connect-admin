@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 
 import { MICROSOFT_AUTH_DIRECT_PATH, publicAdminPath } from "@/constants";
 
@@ -36,7 +35,7 @@ export default async function LoginPage({
       <main className="relative z-10 flex min-h-screen flex-col px-6 py-7 sm:px-10 lg:px-16 lg:py-10">
         <header className="flex items-center gap-3">
           <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-xl shadow-black/20">
-            <Image src={publicAdminPath("/au-connect-logo.png")} alt="AU Connect" width={34} height={30} className="h-auto object-contain" />
+            <Image src={publicAdminPath("/au-connect-logo.png")} alt="AU Connect" width={34} height={30} style={{ width: 34, height: 30 }} className="object-contain" />
           </span>
           <div>
             <p className="text-sm font-bold tracking-[0.18em]">AU CONNECT</p>
@@ -79,14 +78,14 @@ export default async function LoginPage({
                 </div>
               )}
 
-              <Link
-                href={MICROSOFT_AUTH_DIRECT_PATH}
+              <a
+                href={publicAdminPath(MICROSOFT_AUTH_DIRECT_PATH)}
                 className="group flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-5 py-4 text-sm font-semibold text-gray-900 shadow-sm transition hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-50 hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-100 active:translate-y-0 active:border-red-400 active:bg-red-100"
               >
                 <Image src={publicAdminPath("/microsoft-icon.png")} alt="" width={22} height={22} />
                 Continue with Microsoft
                 <span className="ml-auto text-lg text-gray-400 transition group-hover:translate-x-1 group-hover:text-red-600 group-active:text-red-700">→</span>
-              </Link>
+              </a>
 
               <div className="mt-7 flex items-start gap-3 border-t border-gray-200 pt-6 text-xs leading-5 text-gray-500">
                 <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,.35)]" />
