@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 
 import { getMicrosoftAdminEnv } from "@/lib/env";
+import { publicAdminPath } from "@/constants";
 
 type MicrosoftIdToken = {
   aud?: string;
@@ -19,7 +20,7 @@ export function createOAuthState() {
 
 export function getMicrosoftAuthorizeUrl(origin: string, state: string) {
   const { clientId, tenantId } = getMicrosoftAdminEnv();
-  const callbackUrl = `${origin}/api/connect-admin/v1/auth/microsoft/callback`;
+  const callbackUrl = `${origin}${publicAdminPath("/api/connect-admin/v1/auth/microsoft/callback")}`;
   const url = new URL(
     `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize`
   );
@@ -45,7 +46,7 @@ export async function exchangeMicrosoftCode(code: string, origin: string) {
       client_secret: clientSecret,
       code,
       grant_type: "authorization_code",
-      redirect_uri: `${origin}/api/connect-admin/v1/auth/microsoft/callback`,
+      redirect_uri: `${origin}${publicAdminPath("/api/connect-admin/v1/auth/microsoft/callback")}`,
       scope: "openid profile email",
     }),
     cache: "no-store",

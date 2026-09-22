@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { AdminAuthError, requireAdmin, requireSuperAdmin } from "@/lib/adminAuth";
 import { sendAdminInvitation } from "@/lib/adminInvitation";
+import { LOGIN_PAGE_PATH } from "@/constants";
+import { adminPublicUrl } from "@/lib/adminPublicUrl";
 import prisma from "@/lib/prisma";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -73,7 +75,7 @@ export async function POST(request: NextRequest) {
     const invitation = await sendAdminInvitation({
       email,
       role,
-      loginUrl: `${request.nextUrl.origin}/login`,
+      loginUrl: adminPublicUrl(LOGIN_PAGE_PATH, request).toString(),
       invitedBy: currentAdmin.email,
     });
 

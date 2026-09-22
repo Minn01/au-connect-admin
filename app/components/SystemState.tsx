@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { RefreshCw } from "lucide-react";
+import { publicAdminPath } from "@/constants";
 
 type SystemStateProps = {
   kind: "not-found" | "error" | "global-error";
@@ -40,7 +41,7 @@ export default function SystemState({ kind, onRetry }: SystemStateProps) {
       <header className="relative z-10 flex items-center gap-3 self-start">
         <span className="grid h-10 w-10 place-items-center rounded-full bg-white sm:h-12 sm:w-12">
           <Image
-            src="/au-connect-logo.png"
+            src={publicAdminPath("/au-connect-logo.png")}
             alt="AU Connect"
             width={34}
             height={34}

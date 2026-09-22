@@ -27,6 +27,7 @@ import {
   USER_MANAGEMENT_PAGE_PATH,
   USER_VERIFICATION_PAGE_PATH,
   LOGIN_PAGE_PATH,
+  publicAdminPath,
 } from "@/constants";
 import ConfirmModal from "@/app/components/ConfirmModal";
 import { useResolvedAdminMediaUrl } from "@/lib/useResolvedAdminMediaUrl";
@@ -91,7 +92,7 @@ export default function Sidebar({ admin }: { admin: CurrentAdmin | null }) {
       >
         <div className="flex items-center gap-3 border-b border-slate-100 px-6 py-5">
           <Image
-            src="/au-connect-logo.png"
+            src={publicAdminPath("/au-connect-logo.png")}
             alt="AU Connect"
             width={36}
             height={36}

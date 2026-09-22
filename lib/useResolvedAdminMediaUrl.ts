@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 
-import { BASE_API_PATH } from "@/constants";
+import { ADMIN_BASE_PATH, BASE_API_PATH, publicAdminPath } from "@/constants";
 
 function isHttpUrl(value: string) {
-  return value.startsWith("http://") || value.startsWith("https://");
+  return value.startsWith("http://") || value.startsWith("https://") || value.startsWith("//");
 }
 
 function isLocalPath(value: string) {
@@ -19,7 +19,15 @@ export function useResolvedAdminMediaUrl(
   const [url, setUrl] = useState(fallback);
   const raw = (value ?? "").trim();
   const immediate =
-    !raw ? fallback : isLocalPath(raw) || isHttpUrl(raw) ? raw : null;
+    !raw
+      ? fallback
+      : isHttpUrl(raw)
+        ? raw
+        : isLocalPath(raw)
+          ? raw === ADMIN_BASE_PATH || raw.startsWith(`${ADMIN_BASE_PATH}/`)
+            ? raw
+            : publicAdminPath(raw.startsWith("/public/") ? raw.slice("/public".length) : raw)
+          : null;
 
   useEffect(() => {
     let cancelled = false;

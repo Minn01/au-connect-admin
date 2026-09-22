@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { MICROSOFT_LOGIN_API_PATH } from "@/constants";
+import { MICROSOFT_AUTH_DIRECT_PATH, publicAdminPath } from "@/constants";
 
 const errorMessages: Record<string, string> = {
   invalid_state: "Your sign-in request expired. Please try again.",
@@ -22,7 +22,7 @@ export default async function LoginPage({
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#120608] text-white">
       <Image
-        src="/au-login-bg.jpg"
+        src={publicAdminPath("/au-login-bg.jpg")}
         alt="Assumption University campus"
         fill
         priority
@@ -36,7 +36,7 @@ export default async function LoginPage({
       <main className="relative z-10 flex min-h-screen flex-col px-6 py-7 sm:px-10 lg:px-16 lg:py-10">
         <header className="flex items-center gap-3">
           <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-xl shadow-black/20">
-            <Image src="/au-connect-logo.png" alt="AU Connect" width={34} height={30} className="h-auto object-contain" />
+            <Image src={publicAdminPath("/au-connect-logo.png")} alt="AU Connect" width={34} height={30} className="h-auto object-contain" />
           </span>
           <div>
             <p className="text-sm font-bold tracking-[0.18em]">AU CONNECT</p>
@@ -80,10 +80,10 @@ export default async function LoginPage({
               )}
 
               <Link
-                href={MICROSOFT_LOGIN_API_PATH}
+                href={MICROSOFT_AUTH_DIRECT_PATH}
                 className="group flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-5 py-4 text-sm font-semibold text-gray-900 shadow-sm transition hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-50 hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-100 active:translate-y-0 active:border-red-400 active:bg-red-100"
               >
-                <Image src="/microsoft-icon.png" alt="" width={22} height={22} />
+                <Image src={publicAdminPath("/microsoft-icon.png")} alt="" width={22} height={22} />
                 Continue with Microsoft
                 <span className="ml-auto text-lg text-gray-400 transition group-hover:translate-x-1 group-hover:text-red-600 group-active:text-red-700">→</span>
               </Link>

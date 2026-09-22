@@ -3,7 +3,10 @@
  * contains routes, paths and other constants
  */
 
-export const BASE_API_PATH = "/api/connect-admin/v1";
+export const ADMIN_BASE_PATH = "/connect-admin";
+export const publicAdminPath = (path: string) =>
+  `${ADMIN_BASE_PATH}${path === "/" ? "" : path}`;
+export const BASE_API_PATH = publicAdminPath("/api/connect-admin/v1");
 export const MAIN_APP_PATH = "https://au-connect-minn.vercel.app"
 
 // page routes
@@ -33,7 +36,8 @@ export const VERIFICATIONS_API_PATH = BASE_API_PATH + "/verifications";
 export const VERIFICATION_API_PATH = (id: string) => BASE_API_PATH + `/verifications/${id}`;
 export const VERIFICATION_DOCUMENT_API_PATH = (id: string) =>
   BASE_API_PATH + `/verifications/${id}/document`;
-export const MICROSOFT_LOGIN_API_PATH = `${BASE_API_PATH}/auth/microsoft`;
+// This route is reached through Next Link, which adds basePath itself.
+export const MICROSOFT_AUTH_DIRECT_PATH = "/api/connect-admin/v1/auth/microsoft";
 export const ADMIN_SESSION_API_PATH = `${BASE_API_PATH}/auth/session`;
 export const ADMIN_LOGOUT_API_PATH = `${BASE_API_PATH}/auth/logout`;
 export const ADMINS_API_PATH = `${BASE_API_PATH}/admins`;

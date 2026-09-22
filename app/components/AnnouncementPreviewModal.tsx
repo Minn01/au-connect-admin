@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight, Megaphone, X } from "lucide-react";
 
 import { useResolvedAdminMediaUrl } from "@/lib/useResolvedAdminMediaUrl";
+import { publicAdminPath } from "@/constants";
 import type { Announcement } from "@/types/Announcement";
 
 import AnnouncementPreviewSkeleton from "./AnnouncementPreviewSkeleton";
@@ -99,7 +100,7 @@ export default function AnnouncementPreviewModal({
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden border-l border-slate-200">
           <div className="flex items-center gap-3 border-b border-slate-200 p-4">
             <Image
-              src="/au-connect-logo.png"
+              src={publicAdminPath("/au-connect-logo.png")}
               alt="AU Connect"
               width={40}
               height={40}

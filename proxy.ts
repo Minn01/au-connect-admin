@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { BASE_API_PATH, LOGIN_PAGE_PATH } from "@/constants";
+import { LOGIN_PAGE_PATH } from "@/constants";
 import { getCurrentAdmin } from "@/lib/adminAuth";
+import { adminPublicUrl } from "@/lib/adminPublicUrl";
 
-const PUBLIC_AUTH_PATH = `${BASE_API_PATH}/auth`;
+const API_PATH = "/api/connect-admin/v1";
+const PUBLIC_AUTH_PATH = `${API_PATH}/auth`;
 const OPERATIONS_ONLY_API_PATHS = [
-  `${BASE_API_PATH}/announcements`,
-  `${BASE_API_PATH}/verifications`,
-  `${BASE_API_PATH}/upload-media`,
-  `${BASE_API_PATH}/fetch-media`,
+  `${API_PATH}/announcements`,
+  `${API_PATH}/verifications`,
+  `${API_PATH}/upload-media`,
+  `${API_PATH}/fetch-media`,
 ];
 
 export async function proxy(request: NextRequest) {
@@ -20,7 +22,7 @@ export async function proxy(request: NextRequest) {
 
   const admin = await getCurrentAdmin(request);
 
-  if (pathname.startsWith(BASE_API_PATH) && !admin) {
+  if (pathname.startsWith(API_PATH) && !admin) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
@@ -35,11 +37,11 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isLoginPage && admin) {
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(adminPublicUrl("/", request));
   }
 
   if (!isLoginPage && !admin) {
-    return NextResponse.redirect(new URL(LOGIN_PAGE_PATH, request.url));
+    return NextResponse.redirect(adminPublicUrl(LOGIN_PAGE_PATH, request));
   }
 
   return NextResponse.next();
@@ -47,6 +49,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/",
     "/((?!_next/static|_next/image|favicon.ico|au-login-bg.jpg|au-connect-logo.png|microsoft-icon.png).*)",
   ],
 };

@@ -42,7 +42,37 @@
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000/connect-admin](http://localhost:3000/connect-admin) with your browser to see the admin app.
+
+## Production path
+
+The admin app is published at `https://life.au.edu/connect-admin`. Set
+`NEXT_PUBLIC_BASE_PATH=/connect-admin` **before** `next build`. The Docker image
+requires this build argument, and the deployment workflow supplies it. Changing
+the variable only when starting the container cannot change the compiled path.
+Production OAuth, invitation, and redirect URLs use `https://life.au.edu` as
+their origin; local development uses the local request origin. Register
+`https://life.au.edu/connect-admin/api/connect-admin/v1/auth/microsoft/callback`
+with Microsoft for the production app.
+
+On the AU server, route both the exact path and paths beneath it to the admin
+container without changing the request URI:
+
+```nginx
+location = /connect-admin {
+    proxy_pass http://127.0.0.1:ADMIN_PORT;
+    # Use the same proxy headers as the other app locations.
+}
+
+location /connect-admin/ {
+    proxy_pass http://127.0.0.1:ADMIN_PORT;
+    # Use the same proxy headers as the other app locations.
+}
+```
+
+Do not add a URI suffix to `proxy_pass`, strip `/connect-admin`, or add the
+prefix a second time. The live nginx configuration is maintained outside this
+repository. The main app owns the domain root redirect.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

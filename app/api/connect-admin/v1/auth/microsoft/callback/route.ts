@@ -7,11 +7,12 @@ import {
   MICROSOFT_OAUTH_STATE_COOKIE,
 } from "@/constants";
 import { createAdminSession } from "@/lib/adminAuth";
+import { adminPublicOrigin, adminPublicUrl } from "@/lib/adminPublicUrl";
 import { exchangeMicrosoftCode } from "@/lib/microsoftAuth";
 import prisma from "@/lib/prisma";
 
 function loginError(request: NextRequest, error: string) {
-  const response = NextResponse.redirect(new URL(`/login?error=${error}`, request.url));
+  const response = NextResponse.redirect(adminPublicUrl(`/login?error=${error}`, request));
   response.cookies.delete(MICROSOFT_OAUTH_STATE_COOKIE);
   return response;
 }
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // get user data by calling token exchange API
-    const identity = await exchangeMicrosoftCode(code, request.nextUrl.origin);
+    const identity = await exchangeMicrosoftCode(code, adminPublicOrigin(request));
     let admin = await prisma.admin.findUnique({
       // check admin if they've already logged in with microsoft
       where: { microsoftId: identity.microsoftId },
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
     }
 
     // create cookies and redirect to main "/"
-    const response = NextResponse.redirect(new URL("/", request.url));
+    const response = NextResponse.redirect(adminPublicUrl("/", request));
     response.cookies.delete(MICROSOFT_OAUTH_STATE_COOKIE);
     response.cookies.set(ADMIN_SESSION_COOKIE, createAdminSession(admin.id), {
       httpOnly: true,

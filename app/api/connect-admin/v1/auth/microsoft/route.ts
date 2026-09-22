@@ -4,6 +4,7 @@ import {
   MICROSOFT_OAUTH_STATE_COOKIE,
   MICROSOFT_OAUTH_STATE_MAX_AGE,
 } from "@/constants";
+import { adminPublicOrigin, adminPublicUrl } from "@/lib/adminPublicUrl";
 import {
   createOAuthState,
   getMicrosoftAuthorizeUrl,
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
   try {
     const state = createOAuthState();
     const response = NextResponse.redirect(
-      getMicrosoftAuthorizeUrl(request.nextUrl.origin, state)
+      getMicrosoftAuthorizeUrl(adminPublicOrigin(request), state)
     );
 
     response.cookies.set(MICROSOFT_OAUTH_STATE_COOKIE, state, {
@@ -26,6 +27,6 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("Microsoft login could not start:", error);
-    return NextResponse.redirect(new URL("/login?error=configuration", request.url));
+    return NextResponse.redirect(adminPublicUrl("/login?error=configuration", request));
   }
 }
