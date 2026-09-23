@@ -191,6 +191,11 @@ export default function AnnouncementModal({
             <span className="text-xs font-semibold text-slate-700">
               Thumbnail Image <span className="text-red-500">*</span>
             </span>
+            <p className="mt-1 text-xs text-slate-400">
+              Shown as an 88×96px card thumbnail and cropped to fit, so a
+              similar 11:12 portrait ratio works best. Recommended: at least
+              440×480px.
+            </p>
             <label className="mt-1 flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-center transition hover:border-blue-300 hover:bg-blue-50">
               {thumbnailPreview ? (
                 <div className="relative w-full">

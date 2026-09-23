@@ -55,7 +55,6 @@ type Community = {
 
 type CommunityForm = {
   name: string;
-  slug: string;
   about: string;
   location: string;
   status: CommunityStatus;
@@ -79,7 +78,6 @@ type UsersResponse = {
 
 const emptyForm: CommunityForm = {
   name: "",
-  slug: "",
   about: "",
   location: "",
   status: "ACTIVE",
@@ -255,7 +253,6 @@ export default function CommunityPage() {
     setSelectedManagers(community.managers.map((manager) => manager.user));
     setForm({
       name: community.name,
-      slug: community.slug,
       about: community.about ?? "",
       location: community.location ?? "",
       status: community.status,
@@ -317,7 +314,6 @@ export default function CommunityPage() {
     try {
       const payload = {
         name: form.name,
-        slug: form.slug || undefined,
         about: form.about,
         location: form.location,
         status: form.status,
@@ -366,7 +362,6 @@ export default function CommunityPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: community.name,
-          slug: community.slug,
           about: community.about,
           location: community.location,
           status,
@@ -630,17 +625,20 @@ export default function CommunityPage() {
 
               <label className="space-y-1.5">
                 <span className="text-sm font-medium text-slate-700">Slug</span>
-                <input
-                  value={form.slug}
-                  onChange={(event) => updateForm("slug", event.target.value)}
-                  placeholder={generatedSlug || "auto-generated"}
-                  className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
+                <div className="flex h-10 w-full items-center rounded-md border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500">
+                  /community/
+                  {(editingCommunity && form.name === editingCommunity.name
+                    ? editingCommunity.slug
+                    : generatedSlug) || "..."}
+                </div>
+                <p className="text-xs text-slate-400">
+                  Automatically generated from the community name.
+                </p>
               </label>
 
               <label className="space-y-1.5">
                 <span className="text-sm font-medium text-slate-700">
-                  Location
+                  Location <span className="text-slate-400">(optional)</span>
                 </span>
                 <input
                   value={form.location}
@@ -668,7 +666,9 @@ export default function CommunityPage() {
               </label>
 
               <label className="space-y-1.5 md:col-span-2">
-                <span className="text-sm font-medium text-slate-700">About</span>
+                <span className="text-sm font-medium text-slate-700">
+                  About <span className="text-slate-400">(optional)</span>
+                </span>
                 <textarea
                   value={form.about}
                   onChange={(event) => updateForm("about", event.target.value)}
@@ -682,7 +682,10 @@ export default function CommunityPage() {
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h4 className="text-sm font-semibold text-slate-950">
-                    Community managers
+                    Community managers{" "}
+                    <span className="font-normal text-slate-400">
+                      (optional)
+                    </span>
                   </h4>
                   <p className="mt-1 text-xs text-slate-500">
                     Every assigned manager has full community permissions.

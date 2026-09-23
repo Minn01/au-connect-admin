@@ -453,14 +453,11 @@ export default function ReportCasePage() {
                   Case workflow
                 </p>
                 {reportCase.latestStatus === "PENDING" ? (
-                  <button
-                    type="button"
-                    onClick={() => applyAction("MARK_UNDER_REVIEW")}
-                    disabled={actionMutation.isPending}
-                    className="mt-2 h-10 w-full rounded-md bg-blue-600 text-xs font-semibold text-white hover:bg-blue-700"
-                  >
-                    {actionLabel("MARK_UNDER_REVIEW", "Mark Under Review")}
-                  </button>
+                  // Hidden: writes a valid REVIEWED status, but disabled here
+                  // while stray "UNDER_REVIEW" values keep turning up in the
+                  // database from outside either app's code (see investigation
+                  // notes) - hiding it while that's tracked down separately.
+                  null
                 ) : reportCase.latestStatus === "REVIEWED" ? (
                   <div className="mt-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-2.5 text-xs font-semibold text-blue-700">
                     This case is under review
