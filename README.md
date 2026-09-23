@@ -92,17 +92,14 @@ location /connect-admin/ {
     # Use the same proxy headers as the other app locations.
 }
 
-# Replace the current domain-root rule to open the admin app:
-location = / {
-    return 307 /connect-admin;
-}
 ```
 
 Do not add a URI suffix to `proxy_pass`, strip `/connect-admin`, or add the
 prefix a second time. The live nginx configuration is maintained outside this
-repository. Its existing `/ -> /connect` rule must be replaced for the public
-root to send visitors to the admin app. The Next redirect handles requests for
-`/` that reach the admin server directly and preserves their hostname.
+repository. Keep its existing `/` and `/connect` routing pointed at the main
+AU Connect application; only `/connect-admin` and paths beneath it belong to
+this container. The Next redirect handles `/` only when a request reaches the
+admin server directly and does not require a public nginx root redirect.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

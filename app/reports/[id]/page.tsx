@@ -31,6 +31,7 @@ const formatLabel = (value: string) => value.replaceAll("_", " ");
 
 const statusTone: Record<ReportSubmission["status"], string> = {
   PENDING: "bg-amber-50 text-amber-700 ring-amber-200",
+  UNDER_REVIEW: "bg-blue-50 text-blue-700 ring-blue-200",
   REVIEWED: "bg-blue-50 text-blue-700 ring-blue-200",
   DISMISSED: "bg-slate-100 text-slate-600 ring-slate-200",
   ACTION_TAKEN: "bg-emerald-50 text-emerald-700 ring-emerald-200",
@@ -453,12 +454,16 @@ export default function ReportCasePage() {
                   Case workflow
                 </p>
                 {reportCase.latestStatus === "PENDING" ? (
-                  // Hidden: writes a valid REVIEWED status, but disabled here
-                  // while stray "UNDER_REVIEW" values keep turning up in the
-                  // database from outside either app's code (see investigation
-                  // notes) - hiding it while that's tracked down separately.
-                  null
-                ) : reportCase.latestStatus === "REVIEWED" ? (
+                  <button
+                    type="button"
+                    onClick={() => applyAction("MARK_UNDER_REVIEW")}
+                    disabled={actionMutation.isPending}
+                    className="mt-2 h-10 w-full rounded-md bg-blue-600 text-xs font-semibold text-white hover:bg-blue-700"
+                  >
+                    {actionLabel("MARK_UNDER_REVIEW", "Mark Under Review")}
+                  </button>
+                ) : reportCase.latestStatus === "UNDER_REVIEW" ||
+                  reportCase.latestStatus === "REVIEWED" ? (
                   <div className="mt-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-2.5 text-xs font-semibold text-blue-700">
                     This case is under review
                   </div>

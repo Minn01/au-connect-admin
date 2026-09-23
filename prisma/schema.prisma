@@ -19,6 +19,8 @@ model User {
   username String
   email    String @unique
 
+  successfulPostTimes DateTime[] @default([])
+
   googleId    String?
   linkedinId  String?
   microsoftId String?
@@ -39,13 +41,13 @@ model User {
 
   connections Int @default(0)
 
-  accountVerificationStatus AccountVerificationStatus    @default(UNSUBMITTED)
+  accountVerificationStatus AccountVerificationStatus @default(UNSUBMITTED)
   accountVerificationRole   AccountVerificationRole?
-  verificationRequests      AccountVerificationRequest[]
 
   experience           Experience[]
   education            Education[]
   posts                Post[]
+  verificationRequests AccountVerificationRequest[]
   communityManagements CommunityManager[]
   communityFollows     CommunityFollow[]
 
@@ -69,6 +71,7 @@ model User {
   accountStatus  UserAccountStatus @default(ACTIVE)
   suspendedUntil DateTime?
   warningCount   Int               @default(0)
+  userSkills     UserSkill[]
 }
 
 enum UserAccountStatus {
@@ -172,9 +175,14 @@ model Community {
   managers  CommunityManager[]
   followers CommunityFollow[]
   posts     Post[]
+  comments  Comment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  postInteractions            PostInteraction[]
+  notificationsReceivedAsPage Notification[]    @relation("NotificationRecipientCommunity")
+  notificationsSentAsPage     Notification[]    @relation("NotificationFromCommunity")
 }
 
 model CommunityManager {
@@ -224,6 +232,8 @@ model Experience {
 
   userId String @db.ObjectId
   user   User   @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model Education {
@@ -241,6 +251,8 @@ model Education {
 
   userId String @db.ObjectId
   user   User   @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model Post {
@@ -286,6 +298,7 @@ model Post {
   comments          Comment[]
   interactions      PostInteraction[]
   moderationNotices ModerationNotice[]
+  sharedMessages    Message[]          @relation("SharedPostMessages")
 
   moderationStatus PostModerationStatus @default(VISIBLE)
   removedAt        DateTime?
@@ -303,6 +316,11 @@ model Comment {
   userId     String @db.ObjectId
   username   String
   profilePic String
+
+  actorType ActorType @default(USER)
+
+  communityId String?    @db.ObjectId
+  community   Community? @relation(fields: [communityId], references: [id], onDelete: SetNull)
 
   // comment fields
   content String
@@ -368,12 +386,18 @@ model PostInteraction {
   userId String @db.ObjectId
   postId String @db.ObjectId
 
+  actorType ActorType @default(USER)
+
+  communityId String?    @db.ObjectId
+  community   Community? @relation(fields: [communityId], references: [id], onDelete: SetNull)
+
   type      PostInteractionType
   createdAt DateTime            @default(now())
 
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, postId, type])
+  @@index([actorType, userId, postId, type])
+  @@index([actorType, communityId, postId, type])
   @@index([postId, type])
 }
 
@@ -399,25 +423,47 @@ model Notification {
   userId     String @db.ObjectId
   fromUserId String @db.ObjectId
 
+  recipientActorType   ActorType @default(USER)
+  recipientCommunityId String?   @db.ObjectId
+
+  fromActorType   ActorType @default(USER)
+  fromCommunityId String?   @db.ObjectId
+
   type     NotificationType
   entityId String?
   isRead   Boolean          @default(false)
 
   createdAt DateTime @default(now())
 
-  user     User @relation("NotificationUser", fields: [userId], references: [id])
-  fromUser User @relation("NotificationFromUser", fields: [fromUserId], references: [id])
+  user               User       @relation("NotificationUser", fields: [userId], references: [id])
+  fromUser           User       @relation("NotificationFromUser", fields: [fromUserId], references: [id])
+  recipientCommunity Community? @relation("NotificationRecipientCommunity", fields: [recipientCommunityId], references: [id], onDelete: SetNull)
+  fromCommunity      Community? @relation("NotificationFromCommunity", fields: [fromCommunityId], references: [id], onDelete: SetNull)
+
+  @@index([recipientActorType, userId, isRead])
+  @@index([recipientActorType, recipientCommunityId, isRead])
 }
 
 model Conversation {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  userAId String @db.ObjectId
-  userBId String @db.ObjectId
+  // Legacy user-to-user pair fields. Kept for existing conversations.
+  userAId String? @db.ObjectId
+  userBId String? @db.ObjectId
 
-  lastMessageAt       DateTime?
-  lastMessageText     String?
-  lastMessageSenderId String?   @db.ObjectId
+  participantAActorType   ActorType @default(USER)
+  participantAUserId      String?   @db.ObjectId
+  participantACommunityId String?   @db.ObjectId
+
+  participantBActorType   ActorType @default(USER)
+  participantBUserId      String?   @db.ObjectId
+  participantBCommunityId String?   @db.ObjectId
+
+  lastMessageAt                DateTime?
+  lastMessageText              String?
+  lastMessageSenderId          String?   @db.ObjectId
+  lastMessageSenderActorType   ActorType @default(USER)
+  lastMessageSenderCommunityId String?   @db.ObjectId
 
   userALastReadAt DateTime?
   userBLastReadAt DateTime?
@@ -430,9 +476,12 @@ model Conversation {
 
   messages Message[]
 
-  @@unique([userAId, userBId])
   @@index([userAId, lastMessageAt])
   @@index([userBId, lastMessageAt])
+  @@index([participantAActorType, participantAUserId, lastMessageAt])
+  @@index([participantBActorType, participantBUserId, lastMessageAt])
+  @@index([participantAActorType, participantACommunityId, lastMessageAt])
+  @@index([participantBActorType, participantBCommunityId, lastMessageAt])
 }
 
 model Message {
@@ -441,17 +490,64 @@ model Message {
   conversationId String       @db.ObjectId
   conversation   Conversation @relation(fields: [conversationId], references: [id])
 
-  senderId   String @db.ObjectId
-  receiverId String @db.ObjectId
+  // senderId/receiverId are legacy user ids and audit ids for page messages.
+  senderId   String? @db.ObjectId
+  receiverId String? @db.ObjectId
+
+  senderActorType   ActorType @default(USER)
+  senderCommunityId String?   @db.ObjectId
+
+  receiverActorType   ActorType @default(USER)
+  receiverCommunityId String?   @db.ObjectId
 
   text  String?
   media Json?
+  kind  MessageKind @default(TEXT)
+
+  sharedPostId String? @db.ObjectId
+  sharedPost   Post?   @relation("SharedPostMessages", fields: [sharedPostId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
 
   @@index([conversationId, createdAt])
   @@index([senderId])
   @@index([receiverId, createdAt])
+  @@index([sharedPostId])
+}
+
+enum MessageKind {
+  TEXT
+  SHARED_POST
+}
+
+// One client-generated key represents one intentional multi-recipient share.
+// The unique key makes retries safe while still allowing later shares.
+model InternalShareAction {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  idempotencyKey String   @unique
+  senderId       String   @db.ObjectId
+  postId         String   @db.ObjectId
+  recipientIds   String[] @db.ObjectId
+  createdAt      DateTime @default(now())
+
+  @@index([senderId, createdAt])
+  @@index([postId, createdAt])
+}
+
+model RateLimitBucket {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  actorKey    String
+  action      String
+  windowStart DateTime
+  count       Int      @default(0)
+  expiresAt   DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([actorKey, action, windowStart])
+  @@index([expiresAt])
 }
 
 enum JobStatus {
@@ -479,9 +575,8 @@ model JobPost {
   location     String?
   locationType JobLocationType?
 
-  jobDetails      String?
-  jobRequirements String[]
-  jobSkills       JobSkill[]
+  jobDetails String?
+  jobSkills  JobSkill[]
 
   employmentType EmploymentType
 
@@ -568,10 +663,64 @@ enum AnnouncementStatus {
   EXPIRED
 }
 
+enum SkillCategory {
+  LANGUAGE
+  DATABASE
+  PLATFORM
+  FRAMEWORK
+  TOOL
+  SOFT_SKILL
+  BUSINESS
+  MANAGEMENT
+  MARKETING
+  DESIGN
+  DATA
+  FINANCE
+  SALES
+  HUMAN_RESOURCES
+  OPERATIONS
+  WRITING_MEDIA
+  RESEARCH
+}
+
 model Skill {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
-  name      String     @unique
-  jobSkills JobSkill[]
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  name              String
+  normalizedName    String          @unique
+  aliases           String[]        @default([])
+  normalizedAliases String[]        @default([])
+  categories        SkillCategory[]
+  popularity        Float?
+  frequency         Int?
+  iconKey           String?
+  sources           String[]        @default([])
+  active            Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  jobSkills  JobSkill[]
+  userSkills UserSkill[]
+
+  @@index([normalizedAliases])
+  @@index([active, popularity])
+}
+
+model UserSkill {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId  String @db.ObjectId
+  skillId String @db.ObjectId
+  order   Int    @default(0)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, skillId])
+  @@index([userId, order])
+  @@index([skillId])
 }
 
 model JobSkill {
@@ -580,10 +729,13 @@ model JobSkill {
   jobPostId String @db.ObjectId
   skillId   String @db.ObjectId
 
-  jobPost JobPost @relation(fields: [jobPostId], references: [id])
-  skill   Skill   @relation(fields: [skillId], references: [id])
+  jobPost JobPost @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+  skill   Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 
   @@unique([jobPostId, skillId])
+  @@index([jobPostId])
   @@index([skillId])
 }
 
@@ -638,6 +790,7 @@ enum ReportReason {
 
 enum ReportStatus {
   PENDING
+  UNDER_REVIEW
   REVIEWED
   DISMISSED
   ACTION_TAKEN
