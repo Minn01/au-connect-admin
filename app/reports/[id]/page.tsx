@@ -349,7 +349,40 @@ export default function ReportCasePage() {
                 </div>
               </div>
               {reportCase.reportedContent && <p className="mt-4 line-clamp-6 whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600">{reportCase.reportedContent}</p>}
-              <button 
+
+              {reportCase.postAuthor && (
+                <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                    Posted by community member
+                  </p>
+                  <p className="mt-1.5 text-xs text-amber-900">
+                    This post was published as{" "}
+                    <span className="font-semibold">
+                      {reportCase.community?.name ?? "the community"}
+                    </span>
+                    . The member who authored it is{" "}
+                    <span className="font-semibold">
+                      @{reportCase.postAuthor.username}
+                    </span>
+                    .
+                  </p>
+                  <button
+                    onClick={() =>
+                      handleViewOriginalPost(
+                        "USER",
+                        reportCase.postAuthor!.id,
+                        reportCase.postAuthor!.username,
+                      )
+                    }
+                    type="button"
+                    className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-md border border-amber-300 bg-white px-3 text-[11px] font-semibold text-amber-800 hover:bg-amber-100"
+                  >
+                    <CircleUserRound className="h-3.5 w-3.5" /> View member profile
+                  </button>
+                </div>
+              )}
+
+              <button
               onClick={() => handleViewOriginalPost(reportCase.targetType, reportCase.targetId, reportCase.reportedUsername || "")}
               type="button" className="mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50">
                 <ExternalLink className="h-4 w-4" /> View original post

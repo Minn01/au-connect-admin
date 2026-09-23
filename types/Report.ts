@@ -85,6 +85,18 @@ export type ReportCase = {
   latestReportedAt: string;
   moderationActions: ModerationActivity[];
   submissions: ReportSubmission[];
+  // Only populated for POST reports made under a community identity, where
+  // reportedUsername reflects the community's name rather than the member
+  // who actually authored the post.
+  postAuthor: {
+    id: string;
+    username: string;
+    profilePic: string | null;
+  } | null;
+  community: {
+    id: string;
+    name: string;
+  } | null;
 };
 
 export type ReportCaseResponse = {
