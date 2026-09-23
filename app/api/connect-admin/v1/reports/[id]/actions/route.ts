@@ -166,7 +166,7 @@ export async function PATCH(
     const reportStatus =
       action === AdminActionType.MARK_UNDER_REVIEW ||
       action === AdminActionType.REOPEN_CASE
-        ? ReportStatus.REVIEWED
+        ? ReportStatus.UNDER_REVIEW
         : action === AdminActionType.DISMISS_REPORTS ||
             action === AdminActionType.KEEP_POST
           ? ReportStatus.DISMISSED

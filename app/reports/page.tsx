@@ -435,6 +435,7 @@ export default function ReportsPage() {
           >
             <option value="">Status: All</option>
             <option value="PENDING">Pending</option>
+            <option value="UNDER_REVIEW">Under Review</option>
             <option value="REVIEWED">Reviewed</option>
             <option value="DISMISSED">Dismissed</option>
             <option value="ACTION_TAKEN">Action Taken</option>

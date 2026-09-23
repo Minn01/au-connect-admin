@@ -11,7 +11,12 @@ export type Report = {
   reasons: string[];
   reportCount: number;
   statuses: string[];
-  latestStatus: "PENDING" | "REVIEWED" | "DISMISSED" | "ACTION_TAKEN";
+  latestStatus:
+    | "PENDING"
+    | "UNDER_REVIEW"
+    | "REVIEWED"
+    | "DISMISSED"
+    | "ACTION_TAKEN";
   firstReportedAt: string;
   latestReportedAt: string;
   reporters: Array<{
@@ -48,7 +53,12 @@ export type ReportSubmission = {
   id: string;
   reason: string;
   description: string | null;
-  status: "PENDING" | "REVIEWED" | "DISMISSED" | "ACTION_TAKEN";
+  status:
+    | "PENDING"
+    | "UNDER_REVIEW"
+    | "REVIEWED"
+    | "DISMISSED"
+    | "ACTION_TAKEN";
   createdAt: string;
   updatedAt: string;
   reporter: {
