@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   CheckCircle2,
@@ -13,11 +13,9 @@ import {
   FileSearch,
   FileText,
   Flag,
-  ScanSearch,
   RefreshCw,
   Search,
   Users,
-  XCircle,
 } from "lucide-react";
 
 import DetailPanel from "./components/DetailPanel";
@@ -27,7 +25,6 @@ import {
   ReportStats,
   useReportStatsQuery,
 } from "./utils/reportStatsFetchFunction";
-import { MAIN_APP_PATH } from "@/constants";
 import handleViewOriginalPost from "@/lib/handleViewOriginallPost";
 
 // Mock report records used to populate the moderation table and detail panel.
@@ -233,6 +230,25 @@ export default function ReportsPage() {
   // Page-level UI state for tabs, searching, row details, and bulk selection.
   const [selected, setSelected] = useState<Report | null>(null);
   const [checked, setChecked] = useState<string[]>([]);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const openMenuRef = useRef<HTMLDivElement | null>(null);
+
+  // Close the open action menu when clicking anywhere outside of it.
+  useEffect(() => {
+    if (!openMenuId) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        openMenuRef.current &&
+        !openMenuRef.current.contains(event.target as Node)
+      ) {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openMenuId]);
 
   const toggle = (id: string) => {
     setChecked((value) =>
@@ -598,61 +614,55 @@ export default function ReportsPage() {
                       className="px-3 py-3 text-center"
                       onClick={(event) => event.stopPropagation()}
                     >
-                      <details className="group relative inline-block text-left">
-                        <summary
+                      <div
+                        className="relative inline-block text-left"
+                        ref={openMenuId === report.id ? openMenuRef : null}
+                      >
+                        <button
+                          type="button"
                           title="Report actions"
                           aria-label={`Actions for ${report.title}`}
-                          className="grid h-8 w-8 cursor-pointer list-none place-items-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 [&::-webkit-details-marker]:hidden"
+                          onClick={() =>
+                            setOpenMenuId((current) =>
+                              current === report.id ? null : report.id,
+                            )
+                          }
+                          className="grid h-8 w-8 cursor-pointer place-items-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                         >
                           <EllipsisVertical className="h-4 w-4" />
-                        </summary>
+                        </button>
 
-                        <div className="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-lg border border-slate-200 bg-white p-1.5 text-left shadow-lg shadow-slate-950/10">
-                          <button
-                            onClick={() =>
-                              handleViewOriginalPost(
-                                report.targetType,
-                                report.targetId,
-                                report.reportedUsername || "",
-                              )
-                            }
-                            type="button"
-                            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-950"
-                          >
-                            <ExternalLink className="h-4 w-4 text-slate-500" />
-                            View{" "}
-                            {report.targetType === "USER"
-                              ? "Profile"
-                              : "Original Post"}
-                          </button>
-                          <Link
-                            href={`/reports/${report.targetId}`}
-                            className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-950"
-                          >
-                            <FileSearch className="h-4 w-4 text-slate-500" />
-                            Review Full Case
-                          </Link>
-
-                          <div className="my-1.5 border-t border-slate-100" />
-
-                          {report.latestStatus === "PENDING" && (
+                        {openMenuId === report.id && (
+                          <div className="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-lg border border-slate-200 bg-white p-1.5 text-left shadow-lg shadow-slate-950/10">
                             <button
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                handleViewOriginalPost(
+                                  report.targetType,
+                                  report.targetId,
+                                  report.reportedUsername || "",
+                                );
+                              }}
                               type="button"
                               className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-950"
                             >
-                              <ScanSearch className="h-4 w-4 text-blue-600" />
-                              Mark Under Review
+                              <ExternalLink className="h-4 w-4 text-slate-500" />
+                              View{" "}
+                              {report.targetType === "USER"
+                                ? "Profile"
+                                : "Original Post"}
                             </button>
-                          )}
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[11px] font-medium text-red-600 transition-colors hover:bg-red-50"
-                          >
-                            <XCircle className="h-4 w-4" />
-                            Dismiss All Reports
-                          </button>
-                        </div>
-                      </details>
+                            <Link
+                              href={`/reports/${report.targetId}`}
+                              onClick={() => setOpenMenuId(null)}
+                              className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-950"
+                            >
+                              <FileSearch className="h-4 w-4 text-slate-500" />
+                              Review Full Case
+                            </Link>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
