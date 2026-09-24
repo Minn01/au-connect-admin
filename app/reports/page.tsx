@@ -27,7 +27,6 @@ import {
   ReportStats,
   useReportStatsQuery,
 } from "./utils/reportStatsFetchFunction";
-import { MAIN_APP_PATH } from "@/constants";
 import handleViewOriginalPost from "@/lib/handleViewOriginallPost";
 
 // Mock report records used to populate the moderation table and detail panel.
@@ -610,13 +609,13 @@ export default function ReportsPage() {
 
                         <div className="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-lg border border-slate-200 bg-white p-1.5 text-left shadow-lg shadow-slate-950/10">
                           <button
-                            onClick={() =>
-                              handleViewOriginalPost(
+                            onClick={() => {
+                              void handleViewOriginalPost(
                                 report.targetType,
                                 report.targetId,
                                 report.reportedUsername || "",
-                              )
-                            }
+                              );
+                            }}
                             type="button"
                             className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-950"
                           >

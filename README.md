@@ -51,8 +51,9 @@ the main app there.
 
 The admin path is always `/connect-admin`, regardless of hostname. Set
 `NEXT_PUBLIC_BASE_PATH=/connect-admin` **before** `next build`. The Docker image
-requires this build argument, and the deployment workflow supplies it. Changing
-the variable only when starting the container cannot change the compiled path.
+defaults this build argument to `/connect-admin`, and the deployment workflow
+also supplies it explicitly. An override must use that same value. Changing the
+variable only when starting the container cannot change the compiled path.
 Set the same build-time variable in Vercel project settings for preview and
 production builds.
 

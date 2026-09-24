@@ -9,7 +9,6 @@ import {
 import Link from "next/link";
 
 import { Report } from "@/types/Report";
-import { MAIN_APP_PATH } from "@/constants";
 import handleViewOriginalPost from "@/lib/handleViewOriginallPost";
 
 const formatDate = (value: string) => new Date(value).toLocaleString();
@@ -125,7 +124,13 @@ export default function DetailPanel({
 
           <div className="mt-4 space-y-2">
             <button
-              onClick={() => handleViewOriginalPost(report.targetType, report.targetId, report.reportedUsername || "")}
+              onClick={() => {
+                void handleViewOriginalPost(
+                  report.targetType,
+                  report.targetId,
+                  report.reportedUsername || ""
+                );
+              }}
               type="button"
               className="flex h-10 w-full items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition-colors hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
             >

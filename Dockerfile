@@ -14,7 +14,7 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-ARG NEXT_PUBLIC_BASE_PATH
+ARG NEXT_PUBLIC_BASE_PATH=/connect-admin
 RUN test "$NEXT_PUBLIC_BASE_PATH" = "/connect-admin" || (echo "NEXT_PUBLIC_BASE_PATH must be /connect-admin for production builds" >&2; exit 1)
 ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
 

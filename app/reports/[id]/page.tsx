@@ -351,7 +351,13 @@ export default function ReportCasePage() {
               </div>
               {reportCase.reportedContent && <p className="mt-4 line-clamp-6 whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600">{reportCase.reportedContent}</p>}
               <button 
-              onClick={() => handleViewOriginalPost(reportCase.targetType, reportCase.targetId, reportCase.reportedUsername || "")}
+              onClick={() => {
+                void handleViewOriginalPost(
+                  reportCase.targetType,
+                  reportCase.targetId,
+                  reportCase.reportedUsername || ""
+                );
+              }}
               type="button" className="mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50">
                 <ExternalLink className="h-4 w-4" /> View original post
               </button>

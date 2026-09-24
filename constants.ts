@@ -7,7 +7,6 @@ export const ADMIN_BASE_PATH = "/connect-admin";
 export const publicAdminPath = (path: string) =>
   `${ADMIN_BASE_PATH}${path === "/" ? "" : path}`;
 export const BASE_API_PATH = publicAdminPath("/api/connect-admin/v1");
-export const MAIN_APP_PATH = "https://au-connect-minn.vercel.app"
 
 // page routes
 export const MAIN_PAGE_PATH = "/"
