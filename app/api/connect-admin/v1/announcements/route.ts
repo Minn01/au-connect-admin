@@ -6,7 +6,9 @@ import {
   requireAdmin,
 } from "@/lib/adminAuth";
 import {
+  getAnnouncementTodayStart,
   getAnnouncementStatus,
+  parseAnnouncementDate,
   syncAnnouncementStatuses,
 } from "@/lib/announcementHelpers";
 import { isSafeInternalBlobName } from "@/lib/azureMedia";
@@ -83,10 +85,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const startDate = new Date(body?.startDate);
-    const endDate = body?.endDate ? new Date(body.endDate) : null;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const startDate = parseAnnouncementDate(body?.startDate);
+    const endDate = body?.endDate
+      ? parseAnnouncementDate(body.endDate)
+      : null;
+    const today = getAnnouncementTodayStart();
 
     if (Number.isNaN(startDate.getTime())) {
       return NextResponse.json(

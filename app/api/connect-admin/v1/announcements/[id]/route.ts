@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
-import { getAnnouncementStatus } from "@/lib/announcementHelpers";
+import {
+  getAnnouncementStatus,
+  parseAnnouncementDate,
+} from "@/lib/announcementHelpers";
 import { deleteBlobIfExists, isSafeInternalBlobName } from "@/lib/azureMedia";
 import { AdminAuthError, requireAdmin } from "@/lib/adminAuth";
 
@@ -52,8 +55,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       );
     }
 
-    const startDate = new Date(body?.startDate);
-    const endDate = body?.endDate ? new Date(body.endDate) : null;
+    const startDate = parseAnnouncementDate(body?.startDate);
+    const endDate = body?.endDate
+      ? parseAnnouncementDate(body.endDate)
+      : null;
 
     if (Number.isNaN(startDate.getTime())) {
       return NextResponse.json(
