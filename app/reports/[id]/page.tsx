@@ -22,6 +22,7 @@ import {
 
 import { REPORTS_PAGE_PATH } from "@/constants";
 import { ReportAdminAction, ReportSubmission } from "@/types/Report";
+import ConfirmModal from "@/app/components/ConfirmModal";
 import { useReportActionMutation } from "../utils/reportActionFetchFunction";
 import { useReportCaseQuery } from "../utils/reportCaseFetchFunction";
 import handleViewOriginalPost from "@/lib/handleViewOriginallPost";
@@ -49,6 +50,12 @@ const actionDescriptions: Record<ReportAdminAction, string> = {
   REMOVE_POST_WARN_AUTHOR: "Removed post and warned author",
 };
 
+const destructiveActions: ReportAdminAction[] = [
+  "BAN_USER",
+  "REMOVE_POST",
+  "REMOVE_POST_WARN_AUTHOR",
+];
+
 export default function ReportCasePage() {
   const { id } = useParams<{ id: string }>();
   const [query, setQuery] = useState("");
@@ -57,28 +64,18 @@ export default function ReportCasePage() {
   const [sort, setSort] = useState("newest");
   const [moderatorNote, setModeratorNote] = useState("");
   const [suspensionDays, setSuspensionDays] = useState(7);
+  const [pendingConfirmationAction, setPendingConfirmationAction] =
+    useState<ReportAdminAction | null>(null);
 
   const { data, isLoading, isError, error, isFetching, refetch } =
     useReportCaseQuery(id);
   const reportCase = data?.data;
   const actionMutation = useReportActionMutation(id);
 
-  const applyAction = (action: ReportAdminAction) => {
-    const destructiveActions: ReportAdminAction[] = [
-      "BAN_USER",
-      "REMOVE_POST",
-      "REMOVE_POST_WARN_AUTHOR",
-    ];
-
-    if (
-      destructiveActions.includes(action) &&
-      !window.confirm(
-        "Are you sure you want to apply this moderation decision?",
-      )
-    ) {
-      return;
-    }
-
+  const executeAction = (
+    action: ReportAdminAction,
+    closeConfirmation = false,
+  ) => {
     actionMutation.mutate(
       {
         action,
@@ -89,8 +86,20 @@ export default function ReportCasePage() {
       },
       {
         onSuccess: () => setModeratorNote(""),
+        onSettled: () => {
+          if (closeConfirmation) setPendingConfirmationAction(null);
+        },
       },
     );
+  };
+
+  const applyAction = (action: ReportAdminAction) => {
+    if (destructiveActions.includes(action)) {
+      setPendingConfirmationAction(action);
+      return;
+    }
+
+    executeAction(action);
   };
 
   const actionLabel = (action: ReportAdminAction, label: string) =>
@@ -188,6 +197,30 @@ export default function ReportCasePage() {
   const pendingCount = reportCase.submissions.filter(
     (submission) => submission.status === "PENDING",
   ).length;
+  const confirmationContent =
+    pendingConfirmationAction === "BAN_USER"
+      ? {
+          title: "Ban reported user?",
+          description: `${
+            reportCase.reportedUsername
+              ? `@${reportCase.reportedUsername}`
+              : "This user"
+          } will lose access to their account until an administrator reactivates it.`,
+          confirmLabel: "Ban user",
+        }
+      : pendingConfirmationAction === "REMOVE_POST_WARN_AUTHOR"
+        ? {
+            title: "Remove post and warn author?",
+            description:
+              "The reported post will be removed and its author will receive a warning.",
+            confirmLabel: "Remove and warn",
+          }
+        : {
+            title: "Remove reported post?",
+            description:
+              "The reported post will be removed and will no longer be available to users.",
+            confirmLabel: "Remove post",
+          };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-950">
@@ -350,7 +383,40 @@ export default function ReportCasePage() {
                 </div>
               </div>
               {reportCase.reportedContent && <p className="mt-4 line-clamp-6 whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600">{reportCase.reportedContent}</p>}
-              <button 
+
+              {reportCase.postAuthor && (
+                <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                    Posted by community member
+                  </p>
+                  <p className="mt-1.5 text-xs text-amber-900">
+                    This post was published as{" "}
+                    <span className="font-semibold">
+                      {reportCase.community?.name ?? "the community"}
+                    </span>
+                    . The member who authored it is{" "}
+                    <span className="font-semibold">
+                      @{reportCase.postAuthor.username}
+                    </span>
+                    .
+                  </p>
+                  <button
+                    onClick={() =>
+                      void handleViewOriginalPost(
+                        "USER",
+                        reportCase.postAuthor!.id,
+                        reportCase.postAuthor!.username,
+                      )
+                    }
+                    type="button"
+                    className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-md border border-amber-300 bg-white px-3 text-[11px] font-semibold text-amber-800 hover:bg-amber-100"
+                  >
+                    <CircleUserRound className="h-3.5 w-3.5" /> View member profile
+                  </button>
+                </div>
+              )}
+
+              <button
               onClick={() => {
                 void handleViewOriginalPost(
                   reportCase.targetType,
@@ -577,6 +643,20 @@ export default function ReportCasePage() {
           </aside>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={pendingConfirmationAction !== null}
+        title={confirmationContent.title}
+        description={confirmationContent.description}
+        confirmLabel={confirmationContent.confirmLabel}
+        isConfirming={actionMutation.isPending}
+        onConfirm={() => {
+          if (pendingConfirmationAction) {
+            executeAction(pendingConfirmationAction, true);
+          }
+        }}
+        onClose={() => setPendingConfirmationAction(null)}
+      />
     </div>
   );
 }

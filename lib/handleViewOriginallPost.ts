@@ -43,7 +43,12 @@ export default async function handleViewOriginalPost(
       routePath = `${mainAppUrl.origin}${mainAppPath}/posts/${targetId}`;
     }
     if (targetType === "USER" && targetUserName) {
-      const cleanUsername = targetUserName.toLowerCase().split(" ").join("-");
+      // Must mirror the main app's buildSlug() exactly so profile links match.
+      const cleanUsername = targetUserName
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
       routePath = `${mainAppUrl.origin}${mainAppPath}/profile/${cleanUsername}-${targetId}`;
     }
 

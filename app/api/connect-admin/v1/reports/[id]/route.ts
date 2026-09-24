@@ -70,6 +70,33 @@ export async function GET(
       submissions.map((submission) => submission.reporter.id),
     ).size;
 
+    // Posts made under a community identity store the community's name as
+    // Post.username, so reportedUsername doesn't reveal which of the
+    // community's members actually authored the reported post. Look up the
+    // live post to surface that member when applicable.
+    let postAuthor: {
+      id: string;
+      username: string;
+      profilePic: string | null;
+    } | null = null;
+    let community: { id: string; name: string } | null = null;
+
+    if (latest.targetType === "POST") {
+      const post = await prisma.post.findUnique({
+        where: { id: latest.targetId },
+        select: {
+          actorType: true,
+          user: { select: { id: true, username: true, profilePic: true } },
+          community: { select: { id: true, name: true } },
+        },
+      });
+
+      if (post?.actorType === "COMMUNITY") {
+        postAuthor = post.user;
+        community = post.community;
+      }
+    }
+
     return NextResponse.json({
       data: {
         id: latest.targetId,
@@ -85,6 +112,8 @@ export async function GET(
         reportedContent: latest.reportedContent,
         reportedMedia: latest.reportedMedia,
         reportedLinks: latest.reportedLinks,
+        postAuthor,
+        community,
         reportCount: submissions.length,
         uniqueReporterCount,
         reasons: Array.from(
