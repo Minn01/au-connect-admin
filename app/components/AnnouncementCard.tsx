@@ -27,6 +27,7 @@ type AnnouncementCardProps = {
 
 function formatDateRange(startDate: string, endDate: string | null) {
   const formatter = new Intl.DateTimeFormat("en", {
+    timeZone: "Asia/Bangkok",
     month: "short",
     day: "numeric",
     year: "numeric",

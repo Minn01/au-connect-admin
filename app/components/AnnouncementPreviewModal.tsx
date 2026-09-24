@@ -17,6 +17,7 @@ type AnnouncementPreviewModalProps = {
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en", {
+    timeZone: "Asia/Bangkok",
     month: "short",
     day: "numeric",
     year: "numeric",

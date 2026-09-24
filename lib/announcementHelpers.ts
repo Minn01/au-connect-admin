@@ -29,7 +29,7 @@ export function parseAnnouncementDate(value: unknown) {
     const trimmedValue = value.trim();
 
     if (DATE_ONLY_PATTERN.test(trimmedValue)) {
-      return bangkokDateKeyToUtcDate(trimmedValue);
+      return dateKeyToUtcDate(trimmedValue);
     }
 
     return new Date(trimmedValue);
@@ -43,7 +43,7 @@ export function parseAnnouncementDate(value: unknown) {
 }
 
 export function getAnnouncementTodayStart(now = new Date()) {
-  return bangkokDateKeyToUtcDate(getBangkokDateKey(now));
+  return bangkokDateKeyToUtcStart(getBangkokDateKey(now));
 }
 
 export async function syncAnnouncementStatuses(
@@ -94,7 +94,19 @@ function getBangkokDateKey(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function bangkokDateKeyToUtcDate(dateKey: string) {
+function dateKeyToUtcDate(dateKey: string) {
+  const match = DATE_ONLY_PATTERN.exec(dateKey);
+
+  if (!match) {
+    return new Date(Number.NaN);
+  }
+
+  const [, year, month, day] = match;
+
+  return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+}
+
+function bangkokDateKeyToUtcStart(dateKey: string) {
   const match = DATE_ONLY_PATTERN.exec(dateKey);
 
   if (!match) {
